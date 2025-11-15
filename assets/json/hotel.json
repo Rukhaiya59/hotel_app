@@ -1,0 +1,18 @@
+{
+  "hotelUuid": "h-001",
+  "name": "Grand Sapphire Hotel",
+  "address": {
+    "id": 1,
+    "addrUuid": "a-001",
+    "hotelUuid": "h-001",
+    "addr1": "123 Ocean View Blvd",
+    "addr2": "Near Seaside Park",
+    "state": "California",
+    "city": "Santa Monica",
+    "country": "USA",
+    "pinCode": "90401"
+  },
+  "photo": "https://wallpaperaccess.com/full/2690784.jpg",
+  "mobile": "+1 310-555-7888",
+  "email": "contact@grandsapphire.com"
+}
