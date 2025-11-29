@@ -19,161 +19,206 @@ class FragBookingHistory extends StatelessWidget {
     }
   }
 
-  /// Format enum-like string (e.g. EnumBookingStatus.confirmed)
   String cleanEnumString(String? value) {
     if (value == null) return "N/A";
-    final parts = value.split('.');
-    final clean = parts.isNotEmpty ? parts.last : value;
+    final clean = value.split('.').last;
     return clean[0].toUpperCase() + clean.substring(1);
   }
 
   @override
   Widget build(BuildContext context) {
-    final ControllerBookingHistory controller =
-    Get.put(ControllerBookingHistory());
-    final currencyService = Get.find<ServiceCurrency>();//currency
-    final symbol = currencyService.symbol;//currency
+    final controller = Get.put(ControllerBookingHistory());
+    final currencyService = Get.find<ServiceCurrency>();
 
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppBar(
+          title: const Text("Booking History"),
+          automaticallyImplyLeading: false,
+          centerTitle: false,
+          elevation: 1,
+          actions: [
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.filter_list), // Use a filter icon
+              onSelected: (value) {
+                controller.setFilter(value);
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: "Today",
+                  child: Row(
+                    children: const [
+                      Icon(Icons.today, color: Colors.blue),
+                      SizedBox(width: 10),
+                      Text("Today"),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: "This Week",
+                  child: Row(
+                    children: const [
+                      Icon(Icons.calendar_view_week, color: Colors.blue),
+                      SizedBox(width: 10),
+                      Text("This Week"),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: "This Month",
+                  child: Row(
+                    children: const [
+                      Icon(Icons.calendar_month, color: Colors.blue),
+                      SizedBox(width: 10),
+                      Text("This Month"),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: "Room Change",
+                  child: Row(
+                    children: const [
+                      Icon(Icons.swap_horiz, color: Colors.orange),
+                      SizedBox(width: 10),
+                      Text("Room Change History"),
+                    ],
+                  ),
+                ),
 
-    return Obx(() {
-      if (controller.allBookings.isEmpty) {
-        return const Center(
-          child: Text(
-            "No Bookings Found",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-          ),
-        );
-      }
-
-      return ListView.builder(
-        padding: const EdgeInsets.all(12),
-        itemCount: controller.allBookings.length,
-        itemBuilder: (context, index) {
-          final booking = controller.allBookings[index];
-
-          // ✅ Fetch room and guest info
-          final room = booking.room.target;
-          final guestList = booking.guest.toList();
-          final guestName = guestList.isNotEmpty ? guestList.first.first : "N/A";
-
-          return Card(
-            elevation: 3,
-            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+                PopupMenuItem(
+                  value: "All",
+                  child: Row(
+                    children: const [
+                      Icon(Icons.list, color: Colors.blue),
+                      SizedBox(width: 10),
+                      Text("All"),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 🔹 Room info & delete
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      TextBold(
-                        message:
-                        "Room ${room?.number ?? 'N/A'} • Floor ${room?.floor ?? 'N/A'}",
+          ],
+        ),
+        Expanded(
+          child: Obx(() {
+            if (controller.filteredBookings.isEmpty) {
+              return const Center(
+                child: Text(
+                  "No Bookings Found",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+              );
+            }
+
+            if (controller.filter.value == "Room Change") {
+              return ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: controller.roomChangeHistory.length,
+                itemBuilder: (_, i) {
+                  final h = controller.roomChangeHistory[i];
+
+                  return Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextBold(
+                            message: "Booking ID: ${h.bookingId}", style: TextStyle(fontSize: 16),
+                          ),
+                          const SizedBox(height: 6),
+                          _row(Icons.meeting_room, "Old Room: ${h.oldRoomNo}"),
+                          _row(Icons.meeting_room_outlined,
+                              "New Room: ${h.newRoomNo}"),
+                          _row(Icons.login,
+                              "Old Check-In: ${formatDate(h.oldRoomCheckIn)}"),
+                          _row(Icons.logout,
+                              "Old Check-Out: ${formatDate(h.oldRoomCheckOut)}"),
+                          _row(Icons.login,
+                              "New Check-In: ${formatDate(h.newRoomCheckIn)}"),
+                          if (h.newRoomCheckOut != null)
+                            _row(Icons.logout,
+                                "New Check-Out: ${formatDate(h.newRoomCheckOut)}"),
+                          const Divider(),
+                          _row(Icons.info, "Reason: ${h.reason}"),
+                          _row(Icons.update,
+                              "Changed At: ${formatDate(h.changedAt)}"),
+                        ],
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () {
-                          Get.defaultDialog(
-                            title: "Confirm Delete",
-                            middleText:
-                            "Are you sure you want to delete this booking?",
-                            textConfirm: "Yes",
-                            textCancel: "No",
-                            confirmTextColor: Colors.white,
-                            onConfirm: () {
-                              controller.deleteBooking(booking.bookingId);
-                              Get.back();
-                            },
-                          );
-                        },
+                    ),
+                  );
+                },
+              );
+            }
+
+            return RefreshIndicator(
+              onRefresh: () => controller.fetchAllBookings(),
+              child: ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: controller.filteredBookings.length,
+                itemBuilder: (context, index) {
+                  final booking = controller.filteredBookings[index];
+                  final room = booking.room.target;
+                  final guestList = booking.guest.toList();
+                  final guestName =
+                  guestList.isNotEmpty ? guestList.first.first : "N/A";
+
+                  return Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextBold(
+                            message:
+                            "Room ${room?.number ?? 'N/A'} • Floor ${room?.floor ?? 'N/A'}", style: TextStyle(fontSize: 16),
+                          ),
+
+                          const SizedBox(height: 6),
+
+                          _row(Icons.person, "Guest: $guestName"),
+                          _row(Icons.category,
+                              "Booking Type: ${cleanEnumString(booking.bookingType)}"),
+                          _row(Icons.login,
+                              "Check-In: ${formatDate(booking.checkInDate)}"),
+                          _row(Icons.logout,
+                              "Check-Out: ${formatDate(booking.checkOutDate)}"),
+                          _row(Icons.currency_exchange,
+                              "Total Bill: ${currencyService.symbol}${booking.totalBill.toStringAsFixed(2)}"),
+                          _row(Icons.verified,
+                              "Status: ${cleanEnumString(booking.status)}"),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  );
+                },
+              ),);
+          }),
+        ),
 
-                  const SizedBox(height: 6),
+      ],
+    );
+  }
 
-                  //  Guest info
-                  Row(
-                    children: [
-                      const Icon(Icons.person, color: Colors.blue, size: 18),
-                      const SizedBox(width: 6),
-                      TextSmall(message: "Guest: $guestName"),
-                    ],
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  //  Booking Type
-                  Row(
-                    children: [
-                      const Icon(Icons.category,
-                          color: Colors.deepPurpleAccent, size: 18),
-                      const SizedBox(width: 6),
-                      TextSmall(
-                          message:
-                          "Booking Type: ${cleanEnumString(booking.bookingType)}"),
-                    ],
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  // 📅 Check-in/out
-                  Row(
-                    children: [
-                      const Icon(Icons.login, color: Colors.green, size: 18),
-                      const SizedBox(width: 6),
-                      TextSmall(
-                          message: "Check-In: ${formatDate(booking.checkInDate)}"),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      const Icon(Icons.logout, color: Colors.orange, size: 18),
-                      const SizedBox(width: 6),
-                      TextSmall(
-                          message:
-                          "Check-Out: ${formatDate(booking.checkOutDate)}"),
-                    ],
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  //  Total amount
-                  Row(
-                    children: [
-                      const Icon(Icons.currency_exchange,
-                          color: Colors.black87, size: 18),
-                      const SizedBox(width: 6),
-                      TextSmall(
-                          message: "Total Bill: $symbol${booking.totalBill.toStringAsFixed(2)}"),//currency
-
-                    ],
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  //  Status (cleaned)
-                  Row(
-                    children: [
-                      const Icon(Icons.verified, color: Colors.teal, size: 18),
-                      const SizedBox(width: 6),
-                      TextSmall(
-                        message:
-                        "Status: ${cleanEnumString(booking.status)}",
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-    });
+  Widget _row(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.teal, size: 18),
+          const SizedBox(width: 6),
+          TextSmall(message: text, style: TextStyle(fontSize: 14),),
+        ],
+      ),
+    );
   }
 }

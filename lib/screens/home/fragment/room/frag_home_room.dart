@@ -31,7 +31,7 @@ class FragHomeRoom extends StatelessWidget {
                 final rooms = controller.rxListRooms;
                 if (rooms.isEmpty) {
                   return const Center(
-                    child: TextSmall(message: "No rooms found"),
+                    child: TextSmall(message: "No rooms found", style: TextStyle(),),
                   );
                 }
                 return GridView.builder(
@@ -60,7 +60,7 @@ class FragHomeRoom extends StatelessWidget {
                               children: [
                                 Flexible(
                                   child: TextBold(
-                                    message: 'Room ${room.number}',
+                                    message: 'Room ${room.number}', style: TextStyle(),
                                   ),
                                 ),
                                 Icon(Icons.meeting_room_rounded),
@@ -68,12 +68,12 @@ class FragHomeRoom extends StatelessWidget {
                             ),
 
                             // Room details
-                            TextSmall(message: 'Type: ${room.type}'),
-                            TextSmall(message: 'Bed: ${room.bedType}'),
+                            TextSmall(message: 'Type: ${room.type}', style: TextStyle(),),
+                            TextSmall(message: 'Bed: ${room.bedType}', style: TextStyle(),),
                             Obx(() {
                               final symbol = currencyService.symbol;//currency
                               return TextSmall(
-                                message: "Price: $symbol${room.price}",//currency
+                                message: "Price: $symbol${room.price}", style: TextStyle(),//currency
                               );
                             }),
 
@@ -86,7 +86,7 @@ class FragHomeRoom extends StatelessWidget {
                                     .map(
                                       (a) => Chip(
                                     label: TextSmall(
-                                      message: a.name.toString(),
+                                      message: a.name.toString(), style: TextStyle(),
                                     ),
                                     backgroundColor: Colors.blue.shade50,
                                   ),
@@ -159,6 +159,10 @@ class FragHomeRoom extends StatelessWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? Colors.grey        // DARK THEME = WHITE BUTTON
+            : Colors.grey,        // LIGHT THEME = BLACK BUTTON
+
         onPressed: () async {
           bool? isSave = await Get.to(() => ActivityCreateRoom());
           debugPrint("save room: isSave: $isSave");

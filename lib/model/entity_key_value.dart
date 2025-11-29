@@ -3,6 +3,7 @@ import 'package:objectbox/objectbox.dart';
 @Entity()
 class EntityKeyValue {
   @Id()
+  int id = 0;
   int keyValueId;
   String keyValueUuid;
 

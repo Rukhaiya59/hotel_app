@@ -8,8 +8,10 @@ class EntityFoundItem {
   String name;
   String location;
   String customerDetail;
-  DateTime dateFound;
+  String dateFound;
   String status;
+  String? hotelUuid;
+
 
   EntityFoundItem({
     this.id = 0,
@@ -17,6 +19,6 @@ class EntityFoundItem {
     required this.location,
     required this.customerDetail,
     required this.dateFound,
-    required this.status,
+    required this.status
   });
 }

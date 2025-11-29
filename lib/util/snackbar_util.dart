@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 class SnackbarUtil {
   static void showSuccess(String message) {
     _showSnackbar(
@@ -16,7 +17,6 @@ class SnackbarUtil {
       icon: Icons.error_outline,
     );
   }
-
   static void _showSnackbar(String message, {
     required Color backgroundColor,
     required IconData icon,
@@ -43,14 +43,53 @@ class SnackbarUtil {
       ..showSnackBar(snackBar);
   }
 
+  static void showUndo({
+    required String message,
+    required VoidCallback onUndo,
+    int duration = 8,
+    String undoText = "UNDO",
+  }) {
+    Get.rawSnackbar(
+      messageText: Text(
+        message,
+        style: const TextStyle(color: Colors.white),
+      ),
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.red,
+      duration: Duration(seconds: duration),
+      mainButton: TextButton(
+        onPressed: () {
+          Get.back(); // close snackbar
+          onUndo();
+        },
+        child: Text(
+          undoText,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+  //
+  // static void errorSnackBar({required String message}) {
+  //   Get.snackbar(
+  //     'Error',
+  //     "Please select brand id first",
+  //     snackPosition: SnackPosition.BOTTOM,
+  //     backgroundColor: Colors.red,
+  //     colorText: Colors.white,
+  //   );
+  // }
   static void errorSnackBar({required String message}) {
     Get.snackbar(
-        'Error',
-        "Please select brand id first",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+      'Error',
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
     );
-    }
+  }
 
 }

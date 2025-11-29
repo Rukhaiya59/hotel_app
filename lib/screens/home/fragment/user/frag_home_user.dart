@@ -33,15 +33,15 @@ class FragHomeUser extends StatelessWidget {
             child: ListTile(
               leading: Icon(Icons.person),
               title: TextBold(
-                message: "${user.first ?? ''} ${user.last ?? ''}",
+                message: "${user.first ?? ''} ${user.last ?? ''}", style: TextStyle(),
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (user.role != null) Text(user.role!),
-                  if (user.email != null) TextSmall(message: user.email ?? ''),
+                  if (user.email != null) TextSmall(message: user.email ?? '', style: TextStyle(),),
                   if (user.department != null && user.department!.isNotEmpty)
-                    TextSmall(message: "Dept: ${user.department!.join(', ')}"),
+                    TextSmall(message: "Dept: ${user.department!.join(', ')}", style: TextStyle(),),
                 ],
               ),
               trailing: IconButton(

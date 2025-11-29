@@ -5,8 +5,8 @@ import '../../../../enums/enum_room_status.dart';
 import '../../../../widgets/text_bold.dart';
 import '../../../../widgets/text_header.dart';
 import '../../../../widgets/text_small.dart';
-import '../../../room/maintanance/activity_maintenance.dart';
 import '../../../booking/activity_booking.dart';
+import '../../../room/maintenance/maintenance.dart';
 import 'controller_recep_booking.dart';
 
 class FragHomeBooking extends StatelessWidget {
@@ -50,7 +50,7 @@ class FragHomeBooking extends StatelessWidget {
 
                 child: Card(
                   elevation: 4,
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -60,10 +60,34 @@ class FragHomeBooking extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        TextBold(message: room.number ?? "Room"),
+                        TextBold(
+                          message: room.number ?? "Room",
+                          style: TextStyle(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black,
+                          ),
+                        ),
                         const SizedBox(height: 5),
-                        TextSmall(message: "Type: ${room.type ?? '-'}"),
-                        TextSmall(message: "Bed: ${room.bedType ?? '-'}"),
+                        TextSmall(
+                          message: "Type: ${room.type ?? '-'}",
+                          style: TextStyle(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white70
+                                : Colors.black87,
+                          ),
+                        ),
+
+                        TextSmall(
+                          message: "Bed: ${room.bedType ?? '-'}",
+                          style: TextStyle(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white70
+                                : Colors.black87,
+                          ),
+                        ),
+
+
                         const Spacer(),
                         Align(
                           alignment: Alignment.bottomRight,

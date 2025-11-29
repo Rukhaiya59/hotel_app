@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:hotel/server/server_controller.dart';
+import 'package:hotel/service/service_booking_scheduler.dart';
 import 'package:hotel/service/service_currency.dart';
 import 'repository/repo_get_storage.dart';
 import 'service/service_locale.dart';
@@ -16,14 +17,13 @@ import 'util/app_translation.dart';
 void main() async {
   await initServices();
   runApp(MyApp());
-  ServerController();
+  // ServerController();
 }
 
 Future<void> initServices() async {
   WidgetsFlutterBinding.ensureInitialized();
   /// GetStorage ///
   await GetStorage.init();
-
   // // ✅ STEP 1: Initialize ServiceStorage properly
   // final serviceStorage = await ServiceStorage().init(); // <-- this ensures _box is ready
   // Get.put(serviceStorage); // register instance
@@ -33,14 +33,13 @@ Future<void> initServices() async {
   // Get.put(repoGetStorage);
   var storage = await ServiceStorage().init();
   await Get.putAsync<RepoGetStorage>(() async => RepoGetStorage(storage: storage));
-  // ObjectBox
   await Get.putAsync<ServiceObjectBox>(() async => ServiceObjectBox().init());
   // Sync services
   Get.put(ServiceTheme());
   Get.put(ServiceLocale());
   Get.put(AppTranslation());
   Get.put(ServiceCurrency());
-
+  Get.put(ServiceBookingScheduler(), permanent: true);
   // final dir = await getApplicationDocumentsDirectory();
   // String fileName = 'GetStorage';
   // final _file = File('${dir.path}/$fileName.bak');

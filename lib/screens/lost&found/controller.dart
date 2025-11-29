@@ -17,7 +17,7 @@ class ControllerLostFoundCreate extends GetxController {
       name: name.text,
       location: location.text,
       customerDetail: customerDetail.text,
-      dateFound: dateFound.value,
+      dateFound: dateFound.value.toString(),
       status: status.value,
     );
 

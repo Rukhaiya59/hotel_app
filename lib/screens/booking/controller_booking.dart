@@ -1,3 +1,4 @@
+// import 'dart:convert';
 // import 'package:flutter/material.dart';
 // import 'package:get/get.dart';
 // import 'package:hotel/enums/enum_booking_status.dart';
@@ -9,13 +10,19 @@
 // import 'package:hotel/model/entity_payment.dart';
 // import 'package:hotel/model/entity_room.dart';
 // import 'package:hotel/objectbox.g.dart';
+// import 'package:hotel/service/service_currency.dart';
 // import 'package:hotel/service/service_object_box.dart';
 // import 'package:intl/intl.dart';
 // import 'package:mongo_dart/mongo_dart.dart' as mongo;
 //
+// import '../../model/entity_discount.dart';
+// import '../../model/entity_split_bill.dart';
+// import '../../model/model_task.dart';
 // import '../../repository/repo_get_storage.dart';
 // import '../../util/snackbar_util.dart';
-// import 'print/booking_print_overview.dart';
+// import '../home/fragment/guest/controller_guest_crm.dart';
+// import 'controller_cancel_reason.dart';
+// import 'dailog_room_change.dart' hide RoomChangeDialog;
 //
 // class ControllerBooking extends GetxController {
 //   final EntityRoom initialRoom;
@@ -28,8 +35,15 @@
 //   late Box<EntityGuest> boxGuest;
 //   late Box<EntityPayment> boxPayment;
 //   late Box<EntityAmenities> boxAmenities;
+//   late Box<EntityDiscount> boxDiscount;
+//   late Box<EntityRoomChangeHistory> boxRoomChange;// change history
 //
-//   final Rx<EntityRoom> room = EntityRoom().obs; //  Reactive room object
+//   RxList<EntityDiscount> activeDiscounts = <EntityDiscount>[].obs;
+//   RxDouble autoDiscount = 0.0.obs;
+//   final Rxn<EntityDiscount> selectedDiscount = Rxn<EntityDiscount>();// discount
+//
+//
+//   final Rx<EntityRoom> room = EntityRoom().obs;
 //   final Rxn<EntityBooking> selectedBooking = Rxn<EntityBooking>();
 //   final RxList<EntityGuest> rxListGuest = <EntityGuest>[].obs;
 //   final RxList<EntityPayment> rxListPayment = <EntityPayment>[].obs;
@@ -49,12 +63,15 @@
 //   void onInit() {
 //     super.onInit();
 //     final ob = Get.find<ServiceObjectBox>();
-//
+//     boxDiscount = ob.store.box<EntityDiscount>();
 //     boxBooking = ob.store.box<EntityBooking>();
 //     boxRoom = ob.store.box<EntityRoom>();
 //     boxGuest = ob.store.box<EntityGuest>();
 //     boxPayment = ob.store.box<EntityPayment>();
 //     boxAmenities = ob.store.box<EntityAmenities>();
+//     boxDiscount = ob.store.box<EntityDiscount>();
+//     boxRoomChange = ob.store.box<EntityRoomChangeHistory>();//change room history
+//
 //
 //     checkInCtrl = TextEditingController();
 //     checkOutCtrl = TextEditingController();
@@ -65,15 +82,16 @@
 //     tecPaidAmount = TextEditingController();
 //     tecRemaining = TextEditingController();
 //
+//     loadActiveDiscounts();
+//
 //     room.value = initialRoom;
 //
 //     if (room.value.status == EnumRoomStatus.busy.name) {
 //       getBookingDetails();
 //     } else {
 //       checkInCtrl.text = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now());
-//       checkOutCtrl.text = DateFormat(
-//         'yyyy-MM-dd HH:mm',
-//       ).format(DateTime.now().add(const Duration(days: 1)));
+//       checkOutCtrl.text = DateFormat('yyyy-MM-dd HH:mm')
+//           .format(DateTime.now().add(const Duration(days: 1)));
 //       totalCtrl.text = (room.value.price ?? 0).toStringAsFixed(2);
 //       notesCtrl.text = "";
 //     }
@@ -87,66 +105,264 @@
 //     notesCtrl.dispose();
 //     super.onClose();
 //   }
+//   void loadActiveDiscounts() {
+//     final list = boxDiscount
+//         .query(EntityDiscount_.isActive.equals(true))
+//         .build()
+//         .find();
 //
-//   //  Save booking and update instantly
+//     activeDiscounts.value = list;
+//   }
+//   //booking id
+//
+//   // 🔥 Add this inside ControllerBooking class (NOT outside)
+//   int generateBookingId() {
+//     final repo = _repoGetStorage;
+//     final now = DateTime.now();
+//
+//     final lastDateStr = repo.getLastBookingDate();
+//     final resetType = repo.getResetBookingType();
+//     final lastNumber = repo.getLastBookingNumber();
+//
+//     DateTime? lastDate =
+//     lastDateStr.isEmpty ? null : DateTime.tryParse(lastDateStr);
+//
+//     bool reset = false;
+//
+//     switch (resetType) {
+//       case "Daily":
+//         reset = lastDate == null ||
+//             now.difference(lastDate).inDays >= 1;
+//         break;
+//
+//       case "Weekly":
+//         reset = lastDate == null ||
+//             (now.weekday == DateTime.monday &&
+//                 lastDate.weekday != DateTime.monday);
+//         break;
+//
+//       case "Monthly":
+//         reset = lastDate == null ||
+//             now.month != lastDate.month ||
+//             now.year != lastDate.year;
+//         break;
+//
+//       case "Quarterly":
+//         int cq = ((now.month - 1) ~/ 3) + 1;
+//         int lq = lastDate == null ? 0 : ((lastDate.month - 1) ~/ 3) + 1;
+//         reset =
+//             lastDate == null || cq != lq || now.year != lastDate.year;
+//         break;
+//
+//       case "Yearly":
+//         reset = lastDate == null || now.year != lastDate.year;
+//         break;
+//     }
+//
+//     if (reset) {
+//       repo.setLastBookingDate(now.toIso8601String());
+//       repo.setLastBookingNumber(1);
+//       return 1;
+//     } else {
+//       final next = lastNumber + 1;
+//       repo.setLastBookingNumber(next);
+//       return next;
+//     }
+//   }
+// //booking id
+//
 //   Future<EntityBooking> addBooking(EntityBooking booking) async {
 //     final id = boxBooking.put(booking);
 //     final savedBooking = boxBooking.get(id)!;
-//     room.update((r) {
-//       if (r != null) {
-//         r.status = EnumRoomStatus.busy.name;
-//         r.bookingUuid = booking.bookingUuid;
-//       }
-//     });
+//
+//     // ROOM STATUS LOGIC
+//     if (booking.status == EnumBookingStatus.confirmed.name) {
+//       // Guest is staying -> room busy
+//       room.update((r) {
+//         if (r != null) {
+//           r.status = EnumRoomStatus.busy.name;
+//           r.bookingUuid = booking.bookingUuid;
+//         }
+//       });
+//     } else {
+//       // Reservation -> room must stay available
+//       room.update((r) {
+//         if (r != null) {
+//           r.status = EnumRoomStatus.available.name;
+//           r.bookingUuid = null;
+//         }
+//       });
+//     }
+//
 //     boxRoom.put(room.value);
 //     room.refresh();
+//
 //     return savedBooking;
 //   }
-//
-//   //  Update room status instantly + persist
-//   void updateRoomStatus(EnumRoomStatus status) {
-//     room.update((r) {
-//       if (r != null) r.status = status.name;
-//     });
-//     boxRoom.put(room.value);
-//     room.refresh(); //  Instantly rebuild UI
-//   }
-//
-//   // prefill data if already booked
 //   Future<void> getBookingDetails() async {
 //     try {
 //       if (room.value.bookingUuid == null) return;
 //
-//       final query = boxBooking
+//       final booking = boxBooking
 //           .query(EntityBooking_.bookingUuid.equals(room.value.bookingUuid!))
-//           .build();
-//       final booking = query.findFirst();
-//       query.close();
+//           .build()
+//           .findFirst();
 //
 //       if (booking != null) {
 //         selectedBooking.value = booking;
+//
 //         rxListGuest.assignAll(booking.guest.toList());
 //         rxListPayment.assignAll(booking.payment.toList());
 //         rxListAmenities.assignAll(booking.amenities.toList());
-//         // if (booking.discount.target != null) {
-//         //   selectedDiscount.value = booking.discount.target;
-//         // }
 //
 //         tecDiscountPrice.text = booking.discountPrice.toString();
 //         tecDiscountDescription.text = booking.discountDesc ?? "";
 //         checkInCtrl.text = booking.checkInDate;
 //         checkOutCtrl.text = booking.checkOutDate;
 //         totalCtrl.text = booking.totalBill.toStringAsFixed(2);
-//         notesCtrl.text = booking.notes ?? '';
+//         notesCtrl.text = booking.notes ?? "";
+//
 //         updateTotal();
-//         Get.log("Prefilled booking data for room: ${room.value.roomUuid}");
 //       }
 //     } catch (e) {
 //       Get.log("Error loading booking: $e");
 //     }
 //   }
 //
-//   //  Pick DateTime
+//   // 🟩 Save Booking Flow (merged with your JSON + print navigation)
+//   Future<void> saveBooking() async {
+//     if (rxListGuest.isEmpty) {
+//       SnackbarUtil.showError("Please add at least one guest.");
+//       return;
+//     }
+//
+//     final now = DateTime.now();
+//     final ciNew = DateTime.parse(checkInCtrl.text);
+//     final coNew = DateTime.parse(checkOutCtrl.text);
+//
+//     // Determine booking status based on check-in date
+//     final bookingStatus = ciNew.isAfter(now)
+//         ? EnumBookingStatus.reserved.name
+//         : EnumBookingStatus.confirmed.name;
+//
+//     // ─────────────────────────────────────────────
+//     // 🔥 1. DOUBLE BOOKING PROTECTION
+//     // ─────────────────────────────────────────────
+//     final existing = boxBooking
+//         .query(EntityBooking_.bookingUuid.notEquals(""))
+//         .build()
+//         .find()
+//         .where((b) => b.room.target?.roomId == room.value.roomId)
+//         .toList();
+//
+//     for (var b in existing) {
+//       // Ignore if editing the SAME booking
+//       if (selectedBooking.value != null &&
+//           b.bookingUuid == selectedBooking.value!.bookingUuid) {
+//         continue;
+//       }
+//
+//       final ciOld = DateTime.parse(b.checkInDate);
+//       final coOld = DateTime.parse(b.checkOutDate);
+//
+//       bool overlap = ciNew.isBefore(coOld) && coNew.isAfter(ciOld);
+//
+//       if (overlap) {
+//         SnackbarUtil.showError(
+//           "Room already booked for:\n${b.checkInDate} → ${b.checkOutDate}",
+//         );
+//         return;
+//       }
+//     }
+//     final booking = EntityBooking(
+//
+//       bookingId: generateBookingId(), //booking id
+//       bookingUuid: mongo.ObjectId().oid,
+//       totalBill: double.tryParse(totalCtrl.text) ?? 0.0,
+//       discountPrice: double.tryParse(tecDiscountPrice.text) ?? 0.0,
+//       discountDesc: tecDiscountDescription.text,
+//       hotelUuid: _repoGetStorage.getHotelUuid()!,
+//       taxDescription: "Auto Applied Tax",//tax
+//       checkInDate: checkInCtrl.text,
+//       checkOutDate: checkOutCtrl.text,
+//       bookingType: EnumBookingType.walkIn.name,
+//       status: bookingStatus,
+//       notes: notesCtrl.text,
+//     );
+//
+//     booking.cleaningTaskCreated = false;
+//     booking.cleaningTime = DateTime.now().add(const Duration(minutes: 1)).toString();
+//
+//     // 🟨 Logging for debugging
+//     debugPrint("Booking Data: ${json.encode(booking.toMap())}");
+//
+//     booking.guest.addAll(rxListGuest);
+//     for (var g in rxListGuest) {
+//       debugPrint("Guest: ${json.encode(g.toMap())}");
+//     }
+//     // booking.bookingId = 0;
+//
+//     booking.room.target = room.value;
+//     debugPrint("Room: ${json.encode(room.value.toMap())}");
+//
+//     booking.amenities.addAll(rxListAmenities);
+//     for (var a in rxListAmenities) {
+//       debugPrint("Amenity: ${json.encode(a.toMap())}");
+//     }
+//
+//     booking.payment.addAll(rxListPayment);
+//     for (var p in rxListPayment) {
+//       debugPrint("Payment: ${json.encode(p.toMap())}");
+//     }
+//     final bookingId = boxBooking.put(booking);
+//     final savedBooking = boxBooking.get(bookingId)!;
+//     selectedBooking.value = savedBooking;
+//     if (bookingStatus == EnumBookingStatus.confirmed.name) {
+//       room.update((r) {
+//         if (r != null) {
+//           r.status = EnumRoomStatus.busy.name;
+//           r.bookingUuid = savedBooking.bookingUuid;
+//         }
+//       });
+//     } else {
+//       room.update((r) {
+//         if (r != null) {
+//           r.status = EnumRoomStatus.available.name;
+//           r.bookingUuid = null;
+//         }
+//       });
+//     }
+//
+//     boxRoom.put(room.value);
+//     room.refresh();
+//
+//
+//     final crm = Get.put(ControllerGuestCRM());
+//
+//     Get.find<ServiceObjectBox>().store.runInTransaction(TxMode.write, () {
+//       for (var g in rxListGuest) {
+//         final updatedGuest = crm.createOrUpdateGuest(
+//           g,
+//           booking.totalBill,
+//         );
+//
+//         updatedGuest.bookings.add(savedBooking);
+//         boxGuest.put(updatedGuest);
+//
+//         crm.updateGuestInUI(updatedGuest);
+//       }
+//     });
+//
+//     // ─────────────────────────────────────────────
+//     // 🔥 5. SUCCESS
+//     // ─────────────────────────────────────────────
+//     SnackbarUtil.showSuccess(
+//       bookingStatus == EnumBookingStatus.reserved.name
+//           ? "Reservation created!"
+//           : "Room booked successfully!",
+//     );
+//   }
+//
 //   Future<String?> pickDateTime(BuildContext context) async {
 //     final date = await showDatePicker(
 //       context: context,
@@ -169,71 +385,540 @@
 //       time.hour,
 //       time.minute,
 //     );
+//
 //     return DateFormat('yyyy-MM-dd HH:mm').format(combined);
 //   }
-//   Future<void> saveBooking() async {
-//     if (rxListGuest.isEmpty) {
-//       SnackbarUtil.showError("Please add at least one guest.");
+//
+//
+//   // AUTO CHECK-IN
+//   void autoCheckIn(EntityBooking booking) {
+//     booking.status = EnumBookingStatus.confirmed.name;
+//     booking.actualCheckInAt = DateTime.now().toString();
+//     boxBooking.put(booking);
+//
+//     final r = booking.room.target;
+//     if (r != null) {
+//       r.status = EnumRoomStatus.busy.name;
+//       r.bookingUuid = booking.bookingUuid;
+//       boxRoom.put(r);
+//     }
+//
+//     selectedBooking.value = booking;
+//     room.refresh();
+//     SnackbarUtil.showSuccess("Checked in successfully!");
+//   }
+//   void openRoomChangeDialog(BuildContext context) {
+//     Get.dialog(
+//       RoomChangeDialog(
+//         currentRoom: room.value,
+//         onRoomSelected: (newRoom, reason) {
+//           changeRoom(newRoom, reason);
+//         },
+//       ),
+//     );
+//   }
+// // updated change room method
+//   void changeRoom(EntityRoom newRoom, String reason) {
+//     final booking = selectedBooking.value!;
+//     final oldRoom = booking.room.target!;
+//
+//     final oldRoomCheckIn = booking.checkInDate;
+//     final oldRoomCheckOut = DateTime.now().toIso8601String();
+//
+//     // ✅ RELEASE OLD ROOM
+//     oldRoom.status = EnumRoomStatus.available.name;
+//     oldRoom.bookingUuid = null;
+//
+//     // ✅ ASSIGN NEW ROOM
+//     newRoom.status =
+//     booking.status == EnumBookingStatus.reserved.name
+//         ? EnumRoomStatus.available.name
+//         : EnumRoomStatus.busy.name;
+//
+//     newRoom.bookingUuid = booking.bookingUuid;
+//     booking.room.target = newRoom;
+//
+//     final newRoomCheckIn = DateTime.now().toIso8601String();
+//
+//     // ✅ SAVE ROOM CHANGE HISTORY
+//     final history = EntityRoomChangeHistory(
+//       bookingId: booking.bookingId,
+//       oldRoomNo: oldRoom.number ?? "-",
+//       newRoomNo: newRoom.number ?? "-",
+//       oldRoomCheckIn: oldRoomCheckIn,
+//       oldRoomCheckOut: oldRoomCheckOut,
+//       newRoomCheckIn: newRoomCheckIn,
+//       reason: reason,
+//       changedAt: DateTime.now().toIso8601String(),
+//     );
+//
+//     boxRoomChange.put(history);
+//
+//     // ✅ SAVE DATA
+//     boxRoom.put(oldRoom);
+//     boxRoom.put(newRoom);
+//     boxBooking.put(booking);
+//
+//     room.value = newRoom;
+//
+//     // ✅ AUTO UPDATE BILL
+//     updateTotal();
+//
+//     SnackbarUtil.showSuccess("Room changed successfully!");
+//   }
+//
+//
+//   // UPDATE TOTAL BILL
+//   Future<void> updateTotal() async {
+//     double roomPrice = room.value.price ?? 0.0;
+//     double amenitiesPrice = 0.0;
+//
+//     for (var a in rxListAmenities) {
+//       amenitiesPrice += a.price ?? 0.0;
+//     }
+//     autoDiscount.value = calculateDiscount(roomPrice);
+//     autoDiscount.value = calculateDiscount(roomPrice);
+//
+//     // double total = roomPrice + amenitiesPrice - autoDiscount.value;
+//     // totalCtrl.text = total.toStringAsFixed(2);
+//     //
+//     // double paidAmount = 0.0;
+//     // for (var p in rxListPayment) {
+//     //   paidAmount += p.amount;
+//     // }
+//     double taxableAmount =
+//         roomPrice + amenitiesPrice - autoDiscount.value;
+//
+//     //  TAX CALCULATION
+//     double taxTotal = 0.0;
+//     //
+//     // for (var t in activeTaxes) {
+//     //   if (t.isIncludeInRate == true) continue; // inclusive tax ignored here
+//     //   taxTotal += taxableAmount * ((t.taxPercentage ?? 0) / 100);
+//     // }
+//
+//     // totalTaxAmount.value = taxTotal;
+//
+//     //  FINAL TOTAL
+//     double total = taxableAmount + taxTotal;
+//     totalCtrl.text = total.toStringAsFixed(2);
+//
+//     //  PAID / REMAINING
+//     double paidAmount = 0.0;
+//     for (var p in rxListPayment) {
+//       paidAmount += p.amount;
+//     }
+//
+//     tecPaidAmount.text = paidAmount.toStringAsFixed(2);
+//     tecRemaining.text = (total - paidAmount).toStringAsFixed(2);
+//   }
+//
+//
+//     // tecPaidAmount.text = paidAmount.toStringAsFixed(2);
+//     // tecRemaining.text = (total - paidAmount).toStringAsFixed(2);
+//   }
+//
+// double calculateDiscount(double roomPrice) {
+//   if (selectedDiscount.value == null) return 0.0;
+//
+//   final dis = selectedDiscount.value!;
+//
+//   if (dis.discountType == "percentage") {
+//     return roomPrice * (dis.value / 100);
+//   } else {
+//     return dis.value;
+//   }
+// }
+// void loadExistingReservation(EntityBooking b) {
+//   selectedBooking.value = b;
+//   room.value = b.room.target!;
+//   checkInCtrl.text = b.checkInDate;
+//   checkOutCtrl.text = b.checkOutDate;
+//   notesCtrl.text = b.notes ?? "";
+//   totalCtrl.text = b.totalBill.toStringAsFixed(2);
+//
+//   tecDiscountPrice.text = b.discountPrice?.toString() ?? "0";
+//   tecDiscountDescription.text = b.discountDesc ?? "";
+//
+//   rxListGuest.assignAll(b.guest.toList());
+//   rxListAmenities.assignAll(b.amenities.toList());
+//   rxListPayment.assignAll(b.payment.toList());
+//
+//   updateTotal();
+// }
+//
+//   // CANCEL BOOKING
+//   Future<void> cancelBooking(BuildContext context) async {
+//     final booking = selectedBooking.value;
+//     if (booking == null) {
+//       SnackbarUtil.showError("No active booking to cancel.");
 //       return;
 //     }
 //
-//     // 🟩 Create new booking
-//     final booking = EntityBooking(
-//       bookingUuid: mongo.ObjectId().oid,
-//       totalBill: double.tryParse(totalCtrl.text) ?? 0.0,
-//       discountPrice: double.tryParse(tecDiscountPrice.text) ?? 0.0,
-//       discountDesc: tecDiscountDescription.text,
-//       hotelUuid: _repoGetStorage.getHotelUuid()!,
-//       checkInDate: checkInCtrl.text,
-//       checkOutDate: checkOutCtrl.text,
-//       bookingType: EnumBookingType.walkIn.toString(),
-//       status: EnumBookingStatus.confirmed.toString(),
-//       notes: notesCtrl.text,
+//     final reasonCtrl = Get.find<ControllerCancelReason>();
+//     final reason = await reasonCtrl.showCancelReasonDialog(context);
+//
+//     if (reason == null) return;
+//
+//     final roomEntity = booking.room.target;
+//     if (roomEntity == null) return;
+//
+//     final oldStatus = booking.status;
+//     final oldReason = booking.cancelReason;
+//     final oldCancelled = booking.cancelledAt;
+//
+//     booking.status = "cancelled";
+//     booking.cancelReason = reason;
+//     booking.cancelledAt = DateTime.now().toIso8601String();
+//
+//     boxBooking.put(booking);
+//
+//     roomEntity.status = EnumRoomStatus.available.name;
+//     roomEntity.bookingUuid = null;
+//
+//
+//     roomEntity.status = EnumRoomStatus.available.name;
+//     roomEntity.bookingUuid = null;
+//
+//     boxRoom.put(roomEntity);
+//     room.refresh();
+//
+//     SnackbarUtil.showUndo(
+//       message: "Booking cancelled",
+//       onUndo: () {
+//         booking.status = oldStatus;
+//         booking.cancelReason = oldReason;
+//         booking.cancelledAt = oldCancelled;
+//
+//         boxBooking.put(booking);
+//
+//         roomEntity.status = oldStatus == "reserved"
+//             ? EnumRoomStatus.available.name
+//             : EnumRoomStatus.busy.name;
+//
+//         roomEntity.bookingUuid = booking.bookingUuid;
+//
+//         boxRoom.put(roomEntity);
+//         room.refresh();
+//
+//         SnackbarUtil.showSuccess("Cancellation reversed");
+//       },
 //     );
+//     Future<void> cancelReservation(BuildContext context) async {
+//       final booking = selectedBooking.value;
 //
-//     // 🟨 Add guests, room, amenities, payments
-//     booking.guest.addAll(rxListGuest);
-//     booking.room.target = room.value;
-//     booking.amenities.addAll(rxListAmenities);
-//     booking.payment.addAll(rxListPayment);
+//       if (booking == null) {
+//         SnackbarUtil.showError("No booking selected.");
+//         return;
+//       }
 //
-//     // 🟦 Save booking in ObjectBox
-//     final savedBooking = await addBooking(booking);
+//       // Do NOT allow cancellation of completed stays
+//       if (booking.status == EnumBookingStatus.cancelled.name) {
+//         SnackbarUtil.showError("Checked-out bookings cannot be cancelled.");
+//         return;
+//       }
 //
-//     // 🟧 Update room status
-//     updateRoomStatus(EnumRoomStatus.busy);
-//     SnackbarUtil.showSuccess("Room booked successfully!");
+//       // Ask user the reason (using your controller)
+//       final reasonCtrl = Get.find<ControllerCancelReason>();
+//       final reason = await reasonCtrl.showCancelReasonDialog(context);
 //
-//     // 🟨 Store selected booking for reference
-//     selectedBooking.value = savedBooking;
+//       if (reason == null) return;
 //
-//     // 🟪 Small delay to refresh UI (optional)
-//     await Future.delayed(const Duration(milliseconds: 300));
+//       final roomEntity = booking.room.target;
+//       if (roomEntity == null) return;
 //
-//     // 🟩 Navigate to A4 Overview page
-//     Get.to(() => BookingPrintOverview(booking: savedBooking));
+//       // Save previous state for undo
+//       final prevStatus = booking.status;
+//       final prevRoomStatus = roomEntity.status;
+//       final prevCancelReason = booking.cancelReason;
+//       final prevCancelledAt = booking.cancelledAt;
+//
+//       // Apply CANCELLATION
+//       booking.status = EnumBookingStatus.cancelled.name;
+//       booking.cancelReason = reason;
+//       booking.cancelledAt = DateTime.now().toIso8601String();
+//
+//       boxBooking.put(booking);
+//
+//       // Update room state
+//       roomEntity.status = EnumRoomStatus.available.name;
+//       roomEntity.bookingUuid = null;
+//       boxRoom.put(roomEntity);
+//       room.refresh();
+//
+//       SnackbarUtil.showUndo(
+//         message: "Reservation cancelled",
+//         undoText: "UNDO",
+//         onUndo: () {
+//           // Revert booking
+//           booking.status = prevStatus;
+//           booking.cancelReason = prevCancelReason;
+//           booking.cancelledAt = prevCancelledAt;
+//           boxBooking.put(booking);
+//
+//           // Restore old room state
+//           roomEntity.status = prevRoomStatus;
+//           roomEntity.bookingUuid =
+//           prevStatus == EnumBookingStatus.reserved.name ? null : booking.bookingUuid;
+//
+//           boxRoom.put(roomEntity);
+//           room.refresh();
+//
+//           SnackbarUtil.showSuccess("Cancellation undone");
+//         },
+//       );
+//     }
+//
+//
+//
+//     // CHECKOUT
+//     void checkoutBooking() {
+//       final booking = selectedBooking.value;
+//       if (booking == null) {
+//         SnackbarUtil.showError("No active booking to checkout.");
+//         return;
+//       }
+//
+//       if (booking.status == EnumBookingStatus.reserved.name) {
+//         SnackbarUtil.showError("Cannot checkout a reservation.");
+//         return;
+//       }
+//
+//       if ((double.tryParse(tecRemaining.text) ?? 0) > 0) {
+//         SnackbarUtil.showError("Please clear payment before checkout.");
+//         return;
+//       }
+//
+//       final roomEntity = booking.room.target!;
+//       final task = EntityTask(
+//         taskType: "cleaning_checkout",
+//         status: "pending",
+//         reason: "Checkout Cleaning",
+//         createdAt: DateTime.now().toIso8601String(),
+//       );
+//
+//       task.booking.target = booking;
+//       task.room.target = roomEntity;
+//
+//       final boxTask = Get.find<ServiceObjectBox>().store.box<EntityTask>();
+//       boxTask.put(task);
+//
+//       roomEntity.status = EnumRoomStatus.cleaning.name;
+//       boxRoom.put(roomEntity);
+//       // new added field for change room history
+//       final historyList = boxRoomChange
+//           .query(EntityRoomChangeHistory_.bookingId
+//           .equals(booking.bookingId))
+//           .build()
+//           .find();
+//
+//       if (historyList.isNotEmpty) {
+//         final last = historyList.last;
+//         last.newRoomCheckOut = DateTime.now().toIso8601String();
+//         boxRoomChange.put(last);
+//       }
+//
+//
+//       SnackbarUtil.showSuccess("Checkout successful. Cleaning task created.");
+//     }
+//     // ---------------------- SUMMARY GETTERS FOR UI ----------------------
+//
+// // Base room rate
+//     double get roomRate {
+//       return double.tryParse(room.value.price?.toString() ?? "0") ?? 0.0;
+//     }
+//
+// // Total amenities cost (already stored in rxListAmenities)
+//     double get amenitiesTotal {
+//       double total = 0.0;
+//       for (var a in rxListAmenities) {
+//         total += (a.price ?? 0) * (a.qty ?? 1);
+//       }
+//       return total;
+//     }
+//
+// // Total Bill (room + amenities - discount)
+//     double get totalBill {
+//       return roomRate + amenitiesTotal - autoDiscount.value;
+//     }
+//
+// // Paid amount (sum of payment list)
+//     double get paidAmount {
+//       return rxListPayment.fold(0.0, (sum, p) => sum + (p.amount));
+//     }
+//
+// // Remaining amount
+//     double get remainingAmount {
+//       return totalBill - paidAmount;
+//     }
+//     void showEditPaymentDialog(EntityPayment payment) {
+//       final currencyService = Get.find<ServiceCurrency>();
+//
+//       final amtCtrl = TextEditingController(text: payment.amount.toString());
+//       final txnCtrl = TextEditingController(text: payment.transactionId);
+//       final RxString selectedMode = payment.paymentMode.obs;
+//
+//       final List<String> paymentModes = [
+//         'Cash',
+//         'Credit Card',
+//         'Debit Card',
+//         'UPI',
+//         'Net Banking',
+//         'Wallet',
+//       ];
+//
+//       Get.dialog(
+//         Material(
+//           type: MaterialType.transparency,
+//           child: AlertDialog(
+//             title: const Text("Edit Payment"),
+//             content: Column(
+//               mainAxisSize: MainAxisSize.min,
+//               children: [
+//                 DropdownButtonFormField<String>(
+//                   decoration: InputDecoration(
+//                     labelText: 'Payment Mode',
+//                     border: OutlineInputBorder(
+//                       borderRadius: BorderRadius.circular(10),
+//                     ),
+//                   ),
+//                   value: selectedMode.value,
+//                   items: paymentModes.map((mode) {
+//                     return DropdownMenuItem(
+//                       value: mode,
+//                       child: Text(mode),
+//                     );
+//                   }).toList(),
+//                   onChanged: (value) {
+//                     if (value != null) selectedMode.value = value;
+//                   },
+//                 ),
+//                 const SizedBox(height: 10),
+//                 TextField(
+//                   controller: txnCtrl,
+//                   decoration: const InputDecoration(labelText: "Transaction ID"),
+//                 ),
+//                 const SizedBox(height: 10),
+//                 TextField(
+//                   controller: amtCtrl,
+//                   keyboardType: TextInputType.number,
+//                   decoration: InputDecoration(
+//                     labelText: "Amount (${currencyService.symbol})",
+//                     border: const OutlineInputBorder(),
+//                   ),
+//                 ),
+//               ],
+//             ),
+//             actions: [
+//               TextButton(
+//                 onPressed: Get.back,
+//                 child: const Text("Cancel"),
+//               ),
+//               ElevatedButton(
+//                 onPressed: () {
+//                   payment.paymentMode = selectedMode.value;
+//                   payment.transactionId = txnCtrl.text;
+//                   payment.amount = double.tryParse(amtCtrl.text) ?? 0;
+//
+//                   rxListPayment.refresh();
+//                   updateTotal();
+//
+//                   Get.back();
+//                 },
+//                 child: const Text("Save"),
+//               ),
+//             ],
+//
+//   void addSplitPayments(double cash, double card, double upi) {
+//     final repo = Get.find<RepoGetStorage>();
+//     final hotelUuid = repo.getHotelUuid() ?? "";
+//     final currency = Get.find<ServiceCurrency>().currency.value;
+//
+//     // CASH
+//     if (cash > 0) {
+//       rxListPayment.add(
+//         EntityPayment(
+//           paymentUuid: "P-${DateTime.now().millisecondsSinceEpoch}",
+//           paymentMode: "Cash",
+//           amount: cash,
+//           currency: currency,
+//           hotelUuid: hotelUuid,
+//           createdAt: DateTime.now().toString(),
+//         ),
+//       );
+//     }
+//
+//     // CARD
+//     if (card > 0) {
+//       rxListPayment.add(
+//         EntityPayment(
+//           paymentUuid: "P-${DateTime.now().millisecondsSinceEpoch}",
+//           paymentMode: "Card",
+//           amount: card,
+//           currency: currency,
+//           hotelUuid: hotelUuid,
+//           createdAt: DateTime.now().toString(),
+//         ),
+//       );
+//     }
+//
+//     // UPI
+//     if (upi > 0) {
+//       rxListPayment.add(
+//         EntityPayment(
+//           paymentUuid: "P-${DateTime.now().millisecondsSinceEpoch}",
+//           paymentMode: "UPI",
+//           amount: upi,
+//           currency: currency,
+//           hotelUuid: hotelUuid,
+//           createdAt: DateTime.now().toString(),
+//         ),
+//       );
+//     }
+//
+//     updateTotal();
+//   // }
+//   // void addSplitPaymentsAuto(List<SplitPart> parts) {
+//   //   rxListPayment.clear();   // Old clear
+//   //
+//   //   for (var p in parts) {
+//   //     rxListPayment.add(
+//   //       EntityPayment(
+//   //         paymentUuid: DateTime.now().microsecondsSinceEpoch.toString(),
+//   //         amount: p.amount,
+//   //         currency: 'INR',
+//   //         paymentMode: p.paymentMode,   // Cash / Card / UPI
+//   //         transactionId: p.referenceId ?? "",
+//   //         hotelUuid: p.hotelUuid ?? "H001",
+//   //         createdAt: DateTime.now().toString(),
+//   //       ),
+//   //     );
+//   //   }
+//   //
+//   //   updateTotal();
+//   // }
+//
+//
+//
 //   }
 //
+//   void autoCreateSplitPayments(result) {
+//       rxListPayment.clear();
+//       for (var r in result) {
+//         rxListPayment.add(
+//           EntityPayment(
+//             paymentMode: "Split",
+//             amount: r["amount"],
+//             paymentUuid: DateTime.now().microsecondsSinceEpoch.toString(),
+//             hotelUuid: _repoGetStorage.getHotelUuid()!,
+//             currency: "INR",
+//             createdAt: DateTime.now().toString(),
+//           ),
+//         );
+//       }
 //
-//   Future<void> updateTotal() async {
-//     double roomPrice = room.value.price ?? 0.0;
-//     double discountPrice = double.tryParse(tecDiscountPrice.text) ?? 0.0;
-//     double amenitiesPrice = 0.0;
-//     // double paidAmount = double.tryParse(tecPaidAmount.text) ?? 0.0;
-//     // double remaining = double.tryParse(tecRemaining.text) ?? 0.0;
-//     for (EntityAmenities amenity in rxListAmenities) {
-//       amenitiesPrice += amenity.price ?? 0.0;
-//     }
-//
-//     double total = roomPrice + amenitiesPrice - discountPrice;
-//     totalCtrl.text = total.toStringAsFixed(2);
-//
-//     double paidAmount = 0.0;
-//     for (EntityPayment payment in rxListPayment) {
-//       paidAmount += payment.amount;
-//     }
-//     tecRemaining.text = (total - paidAmount).toStringAsFixed(2);
-//     tecPaidAmount.text = paidAmount.toStringAsFixed(2);
+//       updateTotal();
+//       Get.snackbar("Success", "Split Bill Applied!");
 //   }
 // }
 import 'dart:convert';
@@ -248,13 +933,21 @@ import 'package:hotel/model/entity_guest.dart';
 import 'package:hotel/model/entity_payment.dart';
 import 'package:hotel/model/entity_room.dart';
 import 'package:hotel/objectbox.g.dart';
+import 'package:hotel/service/service_currency.dart';
 import 'package:hotel/service/service_object_box.dart';
 import 'package:intl/intl.dart';
 import 'package:mongo_dart/mongo_dart.dart' as mongo;
 
+import '../../model/entity_discount.dart';
+import '../../model/entity_room_change_history.dart';
+import '../../model/entity_split_bill.dart';
+import '../../model/model_task.dart';
 import '../../repository/repo_get_storage.dart';
 import '../../util/snackbar_util.dart';
-import 'print/booking_print_overview.dart';
+import '../home/fragment/guest/controller_guest_crm.dart';
+import 'controller_cancel_reason.dart';
+import 'dailog_room_change.dart' hide RoomChangeDialog;
+import 'dailogs/dailog_room_change.dart';
 
 class ControllerBooking extends GetxController {
   final EntityRoom initialRoom;
@@ -267,6 +960,12 @@ class ControllerBooking extends GetxController {
   late Box<EntityGuest> boxGuest;
   late Box<EntityPayment> boxPayment;
   late Box<EntityAmenities> boxAmenities;
+  late Box<EntityDiscount> boxDiscount;
+  late Box<EntityRoomChangeHistory> boxRoomChange; // change history
+
+  RxList<EntityDiscount> activeDiscounts = <EntityDiscount>[].obs;
+  RxDouble autoDiscount = 0.0.obs;
+  final Rxn<EntityDiscount> selectedDiscount = Rxn<EntityDiscount>(); // discount
 
   final Rx<EntityRoom> room = EntityRoom().obs;
   final Rxn<EntityBooking> selectedBooking = Rxn<EntityBooking>();
@@ -288,12 +987,14 @@ class ControllerBooking extends GetxController {
   void onInit() {
     super.onInit();
     final ob = Get.find<ServiceObjectBox>();
-
+    boxDiscount = ob.store.box<EntityDiscount>();
     boxBooking = ob.store.box<EntityBooking>();
     boxRoom = ob.store.box<EntityRoom>();
     boxGuest = ob.store.box<EntityGuest>();
     boxPayment = ob.store.box<EntityPayment>();
     boxAmenities = ob.store.box<EntityAmenities>();
+    boxDiscount = ob.store.box<EntityDiscount>();
+    boxRoomChange = ob.store.box<EntityRoomChangeHistory>(); // change room history
 
     checkInCtrl = TextEditingController();
     checkOutCtrl = TextEditingController();
@@ -304,12 +1005,15 @@ class ControllerBooking extends GetxController {
     tecPaidAmount = TextEditingController();
     tecRemaining = TextEditingController();
 
+    loadActiveDiscounts();
+
     room.value = initialRoom;
 
     if (room.value.status == EnumRoomStatus.busy.name) {
       getBookingDetails();
     } else {
-      checkInCtrl.text = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now());
+      checkInCtrl.text =
+          DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now());
       checkOutCtrl.text = DateFormat('yyyy-MM-dd HH:mm')
           .format(DateTime.now().add(const Duration(days: 1)));
       totalCtrl.text = (room.value.price ?? 0).toStringAsFixed(2);
@@ -323,12 +1027,23 @@ class ControllerBooking extends GetxController {
     checkOutCtrl.dispose();
     totalCtrl.dispose();
     notesCtrl.dispose();
+    tecDiscountDescription.dispose();
+    tecDiscountPrice.dispose();
+    tecPaidAmount.dispose();
+    tecRemaining.dispose();
     super.onClose();
   }
 
-  //booking id
+  void loadActiveDiscounts() {
+    final list = boxDiscount
+        .query(EntityDiscount_.isActive.equals(true))
+        .build()
+        .find();
 
-  // 🔥 Add this inside ControllerBooking class (NOT outside)
+    activeDiscounts.value = list;
+  }
+
+  // 🔥 Booking ID Generator
   int generateBookingId() {
     final repo = _repoGetStorage;
     final now = DateTime.now();
@@ -344,8 +1059,7 @@ class ControllerBooking extends GetxController {
 
     switch (resetType) {
       case "Daily":
-        reset = lastDate == null ||
-            now.difference(lastDate).inDays >= 1;
+        reset = lastDate == null || now.difference(lastDate).inDays >= 1;
         break;
 
       case "Weekly":
@@ -363,8 +1077,7 @@ class ControllerBooking extends GetxController {
       case "Quarterly":
         int cq = ((now.month - 1) ~/ 3) + 1;
         int lq = lastDate == null ? 0 : ((lastDate.month - 1) ~/ 3) + 1;
-        reset =
-            lastDate == null || cq != lq || now.year != lastDate.year;
+        reset = lastDate == null || cq != lq || now.year != lastDate.year;
         break;
 
       case "Yearly":
@@ -382,45 +1095,48 @@ class ControllerBooking extends GetxController {
       return next;
     }
   }
-//booking id
 
-  // 🟢 Add Booking and update instantly
   Future<EntityBooking> addBooking(EntityBooking booking) async {
     final id = boxBooking.put(booking);
     final savedBooking = boxBooking.get(id)!;
-    room.update((r) {
-      if (r != null) {
-        r.status = EnumRoomStatus.busy.name;
-        r.bookingUuid = booking.bookingUuid;
-      }
-    });
+
+    // ROOM STATUS LOGIC
+    if (booking.status == EnumBookingStatus.confirmed.name) {
+      // Guest is staying -> room busy
+      room.update((r) {
+        if (r != null) {
+          r.status = EnumRoomStatus.busy.name;
+          r.bookingUuid = booking.bookingUuid;
+        }
+      });
+    } else {
+      // Reservation -> room must stay available
+      room.update((r) {
+        if (r != null) {
+          r.status = EnumRoomStatus.available.name;
+          r.bookingUuid = null;
+        }
+      });
+    }
+
     boxRoom.put(room.value);
     room.refresh();
+
     return savedBooking;
   }
 
-  // 🟣 Update room status instantly
-  void updateRoomStatus(EnumRoomStatus status) {
-    room.update((r) {
-      if (r != null) r.status = status.name;
-    });
-    boxRoom.put(room.value);
-    room.refresh();
-  }
-
-  // 🟤 Prefill data for already booked room
   Future<void> getBookingDetails() async {
     try {
       if (room.value.bookingUuid == null) return;
 
-      final query = boxBooking
+      final booking = boxBooking
           .query(EntityBooking_.bookingUuid.equals(room.value.bookingUuid!))
-          .build();
-      final booking = query.findFirst();
-      query.close();
+          .build()
+          .findFirst();
 
       if (booking != null) {
         selectedBooking.value = booking;
+
         rxListGuest.assignAll(booking.guest.toList());
         rxListPayment.assignAll(booking.payment.toList());
         rxListAmenities.assignAll(booking.amenities.toList());
@@ -430,61 +1146,79 @@ class ControllerBooking extends GetxController {
         checkInCtrl.text = booking.checkInDate;
         checkOutCtrl.text = booking.checkOutDate;
         totalCtrl.text = booking.totalBill.toStringAsFixed(2);
-        notesCtrl.text = booking.notes ?? '';
+        notesCtrl.text = booking.notes ?? "";
+
         updateTotal();
-        Get.log("Prefilled booking data for room: ${room.value.roomUuid}");
       }
     } catch (e) {
       Get.log("Error loading booking: $e");
     }
   }
 
-  // 🟠 Pick DateTime
-  Future<String?> pickDateTime(BuildContext context) async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-    );
-    if (date == null) return null;
-
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-    if (time == null) return null;
-
-    final combined = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      time.hour,
-      time.minute,
-    );
-    return DateFormat('yyyy-MM-dd HH:mm').format(combined);
-  }
-
-  // 🟩 Save Booking Flow (merged with your JSON + print navigation)
+  // 🟩 Save Booking Flow
   Future<void> saveBooking() async {
     if (rxListGuest.isEmpty) {
       SnackbarUtil.showError("Please add at least one guest.");
       return;
     }
 
+    final now = DateTime.now();
+    final ciNew = DateTime.parse(checkInCtrl.text);
+    final coNew = DateTime.parse(checkOutCtrl.text);
+
+    // Determine booking status based on check-in date
+    final bookingStatus = ciNew.isAfter(now)
+        ? EnumBookingStatus.reserved.name
+        : EnumBookingStatus.confirmed.name;
+
+    // ─────────────────────────────────────────────
+    // 🔥 1. DOUBLE BOOKING PROTECTION
+    // ─────────────────────────────────────────────
+    final existing = boxBooking
+        .query(EntityBooking_.bookingUuid.notEquals(""))
+        .build()
+        .find()
+        .where((b) => b.room.target?.roomId == room.value.roomId)
+        .toList();
+
+    for (var b in existing) {
+      // Ignore if editing the SAME booking
+      if (selectedBooking.value != null &&
+          b.bookingUuid == selectedBooking.value!.bookingUuid) {
+        continue;
+      }
+
+      final ciOld = DateTime.parse(b.checkInDate);
+      final coOld = DateTime.parse(b.checkOutDate);
+
+      bool overlap = ciNew.isBefore(coOld) && coNew.isAfter(ciOld);
+
+      if (overlap) {
+        SnackbarUtil.showError(
+          "Room already booked for:\n${b.checkInDate} → ${b.checkOutDate}",
+        );
+        return;
+      }
+    }
+
     final booking = EntityBooking(
-      bookingId: generateBookingId(),//booking id
+      bookingId: generateBookingId(), // booking id
       bookingUuid: mongo.ObjectId().oid,
       totalBill: double.tryParse(totalCtrl.text) ?? 0.0,
       discountPrice: double.tryParse(tecDiscountPrice.text) ?? 0.0,
       discountDesc: tecDiscountDescription.text,
       hotelUuid: _repoGetStorage.getHotelUuid()!,
+      taxDescription: "Auto Applied Tax", // tax
       checkInDate: checkInCtrl.text,
       checkOutDate: checkOutCtrl.text,
       bookingType: EnumBookingType.walkIn.name,
-      status: EnumBookingStatus.confirmed.name,
+      status: bookingStatus,
       notes: notesCtrl.text,
     );
+
+    booking.cleaningTaskCreated = false;
+    booking.cleaningTime =
+        DateTime.now().add(const Duration(minutes: 1)).toString();
 
     // 🟨 Logging for debugging
     debugPrint("Booking Data: ${json.encode(booking.toMap())}");
@@ -507,41 +1241,624 @@ class ControllerBooking extends GetxController {
       debugPrint("Payment: ${json.encode(p.toMap())}");
     }
 
-    // 🟦 Save to ObjectBox
-    final savedBooking = await addBooking(booking);
-
-    // 🟧 Update Room Status
-    updateRoomStatus(EnumRoomStatus.busy);
-    SnackbarUtil.showSuccess("Room booked successfully!");
-
+    final bookingId = boxBooking.put(booking);
+    final savedBooking = boxBooking.get(bookingId)!;
     selectedBooking.value = savedBooking;
 
-    // 🟪 Optional UI refresh delay
-    await Future.delayed(const Duration(milliseconds: 300));
+    if (bookingStatus == EnumBookingStatus.confirmed.name) {
+      room.update((r) {
+        if (r != null) {
+          r.status = EnumRoomStatus.busy.name;
+          r.bookingUuid = savedBooking.bookingUuid;
+        }
+      });
+    } else {
+      room.update((r) {
+        if (r != null) {
+          r.status = EnumRoomStatus.available.name;
+          r.bookingUuid = null;
+        }
+      });
+    }
 
-    // 🟩 Navigate to Print Overview
-    Get.to(() => BookingPrintOverview(booking: savedBooking));
+    boxRoom.put(room.value);
+    room.refresh();
+
+    final crm = Get.put(ControllerGuestCRM());
+
+    Get.find<ServiceObjectBox>().store.runInTransaction(TxMode.write, () {
+      for (var g in rxListGuest) {
+        final updatedGuest = crm.createOrUpdateGuest(
+          g,
+          booking.totalBill,
+        );
+
+        updatedGuest.bookings.add(savedBooking);
+        boxGuest.put(updatedGuest);
+
+        crm.updateGuestInUI(updatedGuest);
+      }
+    });
+
+    SnackbarUtil.showSuccess(
+      bookingStatus == EnumBookingStatus.reserved.name
+          ? "Reservation created!"
+          : "Room booked successfully!",
+    );
   }
 
-  // 🟫 Update total + remaining
+  Future<String?> pickDateTime(BuildContext context) async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (date == null) return null;
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (time == null) return null;
+
+    final combined = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+
+    return DateFormat('yyyy-MM-dd HH:mm').format(combined);
+  }
+
+  // AUTO CHECK-IN
+  void autoCheckIn(EntityBooking booking) {
+    booking.status = EnumBookingStatus.confirmed.name;
+    booking.actualCheckInAt = DateTime.now().toString();
+    boxBooking.put(booking);
+
+    final r = booking.room.target;
+    if (r != null) {
+      r.status = EnumRoomStatus.busy.name;
+      r.bookingUuid = booking.bookingUuid;
+      boxRoom.put(r);
+    }
+
+    selectedBooking.value = booking;
+    room.refresh();
+    SnackbarUtil.showSuccess("Checked in successfully!");
+  }
+
+  void openRoomChangeDialog(BuildContext context) {
+    Get.dialog(
+      RoomChangeDialog(
+        currentRoom: room.value,
+        onRoomSelected: (newRoom, reason) {
+          changeRoom(newRoom, reason);
+        },
+      ),
+    );
+  }
+
+  // updated change room method
+  void changeRoom(EntityRoom newRoom, String reason) {
+    final booking = selectedBooking.value!;
+    final oldRoom = booking.room.target!;
+
+    final oldRoomCheckIn = booking.checkInDate;
+    final oldRoomCheckOut = DateTime.now().toIso8601String();
+
+    // ✅ RELEASE OLD ROOM
+    oldRoom.status = EnumRoomStatus.available.name;
+    oldRoom.bookingUuid = null;
+
+    // ✅ ASSIGN NEW ROOM
+    newRoom.status = booking.status == EnumBookingStatus.reserved.name
+        ? EnumRoomStatus.available.name
+        : EnumRoomStatus.busy.name;
+
+    newRoom.bookingUuid = booking.bookingUuid;
+    booking.room.target = newRoom;
+
+    final newRoomCheckIn = DateTime.now().toIso8601String();
+
+    // ✅ SAVE ROOM CHANGE HISTORY
+    final history = EntityRoomChangeHistory(
+      bookingId: booking.bookingId,
+      oldRoomNo: oldRoom.number ?? "-",
+      newRoomNo: newRoom.number ?? "-",
+      oldRoomCheckIn: oldRoomCheckIn,
+      oldRoomCheckOut: oldRoomCheckOut,
+      newRoomCheckIn: newRoomCheckIn,
+      reason: reason,
+      changedAt: DateTime.now().toIso8601String(),
+    );
+
+    boxRoomChange.put(history);
+
+    // ✅ SAVE DATA
+    boxRoom.put(oldRoom);
+    boxRoom.put(newRoom);
+    boxBooking.put(booking);
+
+    room.value = newRoom;
+
+    // ✅ AUTO UPDATE BILL
+    updateTotal();
+
+    SnackbarUtil.showSuccess("Room changed successfully!");
+  }
+
+  // UPDATE TOTAL BILL
+  // Future<void> updateTotal() async {
+  //   double roomPrice = room.value.price ?? 0.0;
+  //   double amenitiesPrice = 0.0;
+  //
+  //   for (var a in rxListAmenities) {
+  //     amenitiesPrice += a.price ?? 0.0;
+  //   }
+  //
+  //   autoDiscount.value = calculateDiscount(roomPrice);
+  //
+  //   double taxableAmount =
+  //       roomPrice + amenitiesPrice - autoDiscount.value;
+  //
+  //   // TAX CALCULATION
+  //   double taxTotal = 0.0;
+  //   // taxTotal logic yahan baad me add kar sakte ho
+  //
+  //   double total = taxableAmount + taxTotal;
+  //   totalCtrl.text = total.toStringAsFixed(2);
+  //
+  //   double paidAmount = 0.0;
+  //   for (var p in rxListPayment) {
+  //     paidAmount += p.amount;
+  //   }
+  //
+  //   tecPaidAmount.text = paidAmount.toStringAsFixed(2);
+  //   tecRemaining.text = (total - paidAmount).toStringAsFixed(2);
+  // }
   Future<void> updateTotal() async {
     double roomPrice = room.value.price ?? 0.0;
-    double discountPrice = double.tryParse(tecDiscountPrice.text) ?? 0.0;
     double amenitiesPrice = 0.0;
 
-    for (EntityAmenities amenity in rxListAmenities) {
-      amenitiesPrice += amenity.price ?? 0.0;
+    // FIX: apply qty properly
+    for (var a in rxListAmenities) {
+      amenitiesPrice += ((a.price ?? 0) * (a.qty ?? 1));
     }
 
-    double total = roomPrice + amenitiesPrice - discountPrice;
-    totalCtrl.text = total.toStringAsFixed(2);
+    // correct discount
+    autoDiscount.value = calculateDiscount(roomPrice);
 
+    double taxableAmount =
+        roomPrice + amenitiesPrice - autoDiscount.value;
+
+    // if you add tax later
+    double taxTotal = 0.0;
+
+    double finalTotal = taxableAmount + taxTotal;
+
+    totalCtrl.text = finalTotal.toStringAsFixed(2);
+
+    // SUM OF SPLIT / PAYMENTS
     double paidAmount = 0.0;
-    for (EntityPayment payment in rxListPayment) {
-      paidAmount += payment.amount;
+    for (var p in rxListPayment) {
+      paidAmount += p.amount;
     }
 
-    tecRemaining.text = (total - paidAmount).toStringAsFixed(2);
     tecPaidAmount.text = paidAmount.toStringAsFixed(2);
+    tecRemaining.text = (finalTotal - paidAmount).toStringAsFixed(2);
   }
+
+  double calculateDiscount(double roomPrice) {
+    if (selectedDiscount.value == null) return 0.0;
+
+    final dis = selectedDiscount.value!;
+
+    if (dis.discountType == "percentage") {
+      return roomPrice * (dis.value / 100);
+    } else {
+      return dis.value;
+    }
+  }
+
+  void loadExistingReservation(EntityBooking b) {
+    selectedBooking.value = b;
+    room.value = b.room.target!;
+    checkInCtrl.text = b.checkInDate;
+    checkOutCtrl.text = b.checkOutDate;
+    notesCtrl.text = b.notes ?? "";
+    totalCtrl.text = b.totalBill.toStringAsFixed(2);
+
+    tecDiscountPrice.text = b.discountPrice?.toString() ?? "0";
+    tecDiscountDescription.text = b.discountDesc ?? "";
+
+    rxListGuest.assignAll(b.guest.toList());
+    rxListAmenities.assignAll(b.amenities.toList());
+    rxListPayment.assignAll(b.payment.toList());
+
+    updateTotal();
+  }
+
+  // CANCEL BOOKING (stay)
+  Future<void> cancelBooking(BuildContext context) async {
+    final booking = selectedBooking.value;
+    if (booking == null) {
+      SnackbarUtil.showError("No active booking to cancel.");
+      return;
+    }
+
+    final reasonCtrl = Get.find<ControllerCancelReason>();
+    final reason = await reasonCtrl.showCancelReasonDialog(context);
+
+    if (reason == null) return;
+
+    final roomEntity = booking.room.target;
+    if (roomEntity == null) return;
+
+    final oldStatus = booking.status;
+    final oldReason = booking.cancelReason;
+    final oldCancelled = booking.cancelledAt;
+
+    booking.status = "cancelled";
+    booking.cancelReason = reason;
+    booking.cancelledAt = DateTime.now().toIso8601String();
+
+    boxBooking.put(booking);
+
+    roomEntity.status = EnumRoomStatus.available.name;
+    roomEntity.bookingUuid = null;
+    boxRoom.put(roomEntity);
+    room.refresh();
+
+    SnackbarUtil.showUndo(
+      message: "Booking cancelled",
+      onUndo: () {
+        booking.status = oldStatus;
+        booking.cancelReason = oldReason;
+        booking.cancelledAt = oldCancelled;
+
+        boxBooking.put(booking);
+
+        roomEntity.status = oldStatus == "reserved"
+            ? EnumRoomStatus.available.name
+            : EnumRoomStatus.busy.name;
+
+        roomEntity.bookingUuid = booking.bookingUuid;
+
+        boxRoom.put(roomEntity);
+        room.refresh();
+
+        SnackbarUtil.showSuccess("Cancellation reversed");
+      },
+    );
+  }
+
+  // CANCEL RESERVATION (only reservation)
+  Future<void> cancelReservation(BuildContext context) async {
+    final booking = selectedBooking.value;
+
+    if (booking == null) {
+      SnackbarUtil.showError("No booking selected.");
+      return;
+    }
+
+    // Do NOT allow cancellation of completed stays
+    if (booking.status == EnumBookingStatus.cancelled.name) {
+      SnackbarUtil.showError("Checked-out bookings cannot be cancelled.");
+      return;
+    }
+
+    final reasonCtrl = Get.find<ControllerCancelReason>();
+    final reason = await reasonCtrl.showCancelReasonDialog(context);
+
+    if (reason == null) return;
+
+    final roomEntity = booking.room.target;
+    if (roomEntity == null) return;
+
+    // Save previous state for undo
+    final prevStatus = booking.status;
+    final prevRoomStatus = roomEntity.status;
+    final prevCancelReason = booking.cancelReason;
+    final prevCancelledAt = booking.cancelledAt;
+
+    // Apply CANCELLATION
+    booking.status = EnumBookingStatus.cancelled.name;
+    booking.cancelReason = reason;
+    booking.cancelledAt = DateTime.now().toIso8601String();
+
+    boxBooking.put(booking);
+
+    // Update room state
+    roomEntity.status = EnumRoomStatus.available.name;
+    roomEntity.bookingUuid = null;
+    boxRoom.put(roomEntity);
+    room.refresh();
+
+    SnackbarUtil.showUndo(
+      message: "Reservation cancelled",
+      undoText: "UNDO",
+      onUndo: () {
+        // Revert booking
+        booking.status = prevStatus;
+        booking.cancelReason = prevCancelReason;
+        booking.cancelledAt = prevCancelledAt;
+        boxBooking.put(booking);
+
+        // Restore old room state
+        roomEntity.status = prevRoomStatus;
+        roomEntity.bookingUuid =
+        prevStatus == EnumBookingStatus.reserved.name
+            ? null
+            : booking.bookingUuid;
+
+        boxRoom.put(roomEntity);
+        room.refresh();
+
+        SnackbarUtil.showSuccess("Cancellation undone");
+      },
+    );
+  }
+
+  // CHECKOUT
+  void checkoutBooking() {
+    final booking = selectedBooking.value;
+    if (booking == null) {
+      SnackbarUtil.showError("No active booking to checkout.");
+      return;
+    }
+
+    if (booking.status == EnumBookingStatus.reserved.name) {
+      SnackbarUtil.showError("Cannot checkout a reservation.");
+      return;
+    }
+
+    if ((double.tryParse(tecRemaining.text) ?? 0) > 0) {
+      SnackbarUtil.showError("Please clear payment before checkout.");
+      return;
+    }
+
+    final roomEntity = booking.room.target!;
+    final task = EntityTask(
+      taskType: "cleaning_checkout",
+      status: "pending",
+      reason: "Checkout Cleaning",
+      createdAt: DateTime.now().toIso8601String(),
+    );
+
+    task.booking.target = booking;
+    task.room.target = roomEntity;
+
+    final boxTask = Get.find<ServiceObjectBox>().store.box<EntityTask>();
+    boxTask.put(task);
+
+    roomEntity.status = EnumRoomStatus.cleaning.name;
+    boxRoom.put(roomEntity);
+
+    // new added field for change room history
+    final historyList = boxRoomChange
+        .query(EntityRoomChangeHistory_.bookingId.equals(booking.bookingId))
+        .build()
+        .find();
+
+    if (historyList.isNotEmpty) {
+      final last = historyList.last;
+      last.newRoomCheckOut = DateTime.now().toIso8601String();
+      boxRoomChange.put(last);
+    }
+
+    SnackbarUtil.showSuccess(
+        "Checkout successful. Cleaning task created.");
+  }
+
+  // ---------------------- SUMMARY GETTERS FOR UI ----------------------
+
+  double get roomRate {
+    return double.tryParse(room.value.price?.toString() ?? "0") ?? 0.0;
+  }
+  //
+  // double get amenitiesTotal {
+  //   double total = 0.0;
+  //   for (var a in rxListAmenities) {
+  //     total += (a.price ?? 0) * (a.qty ?? 1);
+  //   }
+  //   return total;
+  // }
+  double get amenitiesTotal {
+    double total = 0.0;
+    for (var a in rxListAmenities) {
+      total += (a.price ?? 0) * (a.qty ?? 1);
+    }
+    return total;
+  }
+
+
+  double get totalBill {
+    return double.tryParse(totalCtrl.text) ?? 0.0;
+  }
+
+  double get paidAmount {
+    return rxListPayment.fold(0.0, (sum, p) => sum + (p.amount));
+  }
+
+  double get remainingAmount {
+    return totalBill - paidAmount;
+  }
+
+  void showEditPaymentDialog(EntityPayment payment) {
+    final currencyService = Get.find<ServiceCurrency>();
+
+    final amtCtrl =
+    TextEditingController(text: payment.amount.toString());
+    final txnCtrl =
+    TextEditingController(text: payment.transactionId ?? "");
+    final RxString selectedMode = payment.paymentMode.obs;
+
+    final List<String> paymentModes = [
+      'Cash',
+      'Credit Card',
+      'Debit Card',
+      'UPI',
+      'Net Banking',
+      'Wallet',
+    ];
+
+    Get.dialog(
+      Material(
+        type: MaterialType.transparency,
+        child: AlertDialog(
+          title: const Text("Edit Payment"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  labelText: 'Payment Mode',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                value: selectedMode.value,
+                items: paymentModes.map((mode) {
+                  return DropdownMenuItem(
+                    value: mode,
+                    child: Text(mode),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) selectedMode.value = value;
+                },
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: txnCtrl,
+                decoration: const InputDecoration(
+                  labelText: "Transaction ID",
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: amtCtrl,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: "Amount (${currencyService.symbol})",
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: Get.back,
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                payment.paymentMode = selectedMode.value;
+                payment.transactionId = txnCtrl.text;
+                payment.amount = double.tryParse(amtCtrl.text) ?? 0;
+
+                rxListPayment.refresh();
+                updateTotal();
+
+                Get.back();
+              },
+              child: const Text("Save"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void addSplitPayments(double cash, double card, double upi) {
+    final repo = Get.find<RepoGetStorage>();
+    final hotelUuid = repo.getHotelUuid() ?? "";
+    final currency = Get.find<ServiceCurrency>().currency.value;
+
+    // CASH
+    if (cash > 0) {
+      rxListPayment.add(
+        EntityPayment(
+          paymentUuid: "P-${DateTime.now().millisecondsSinceEpoch}",
+          paymentMode: "Cash",
+          amount: cash,
+          currency: currency,
+          hotelUuid: hotelUuid,
+          createdAt: DateTime.now().toString(),
+        ),
+      );
+    }
+
+    // CARD
+    if (card > 0) {
+      rxListPayment.add(
+        EntityPayment(
+          paymentUuid: "P-${DateTime.now().millisecondsSinceEpoch}",
+          paymentMode: "Card",
+          amount: card,
+          currency: currency,
+          hotelUuid: hotelUuid,
+          createdAt: DateTime.now().toString(),
+        ),
+      );
+    }
+
+    // UPI
+    if (upi > 0) {
+      rxListPayment.add(
+        EntityPayment(
+          paymentUuid: "P-${DateTime.now().millisecondsSinceEpoch}",
+          paymentMode: "UPI",
+          amount: upi,
+          currency: currency,
+          hotelUuid: hotelUuid,
+          createdAt: DateTime.now().toString(),
+        ),
+      );
+    }
+
+    updateTotal();
+  }
+  void autoCreateSplitPayments(List<Map<String, dynamic>> result) {
+    // 1️⃣ Clear old payments
+    rxListPayment.clear();
+
+    double totalSplitAmount = 0;
+
+    // 2️⃣ Add new split payments
+    for (var r in result) {
+      double amt = (r["amount"] as num).toDouble();
+      totalSplitAmount += amt;
+
+      rxListPayment.add(
+        EntityPayment(
+          paymentMode: "Split",
+          amount: amt,
+          paymentUuid: DateTime.now().microsecondsSinceEpoch.toString(),
+          hotelUuid: _repoGetStorage.getHotelUuid()!,
+          currency: "INR",
+          createdAt: DateTime.now().toString(),
+        ),
+      );
+    }
+
+    // 3️⃣ If split does NOT match bill total → adjust last person
+    double totalBill = this.totalBill;
+    if (totalSplitAmount != totalBill && rxListPayment.isNotEmpty) {
+      double diff = totalBill - totalSplitAmount;
+
+      // adjust last payment by difference
+      rxListPayment.last.amount += diff;
+    }
+
+    // 4️⃣ Recalculate totals
+    updateTotal();
+
+    Get.snackbar("Success", "Split Bill Applied!");
+  }
+
 }

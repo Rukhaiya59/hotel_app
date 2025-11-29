@@ -4,7 +4,6 @@ import 'package:objectbox/objectbox.dart';
 class EntityAmenities{
   @Id()
   int amenitiesId = 0;
-  String? currency; // e.g. "INR", "USD", "EUR"
 
   String? amenitiesUuid;
   String? hotelUuid;
@@ -21,7 +20,6 @@ class EntityAmenities{
     this.amenitiesUuid,
     this.hotelUuid,
     this.name,
-    this.currency, // ✅ new field
     this.price,
     this.qty,
     this.description,
@@ -47,17 +45,16 @@ class EntityAmenities{
 
   factory EntityAmenities.fromJson(Map<String, dynamic> map) {
     return EntityAmenities(
-        amenitiesId: map['amenitiesId']?.toInt() ?? 0,
-        amenitiesUuid: map['amenitiesUuid'],
-        hotelUuid: map['hotelUuid'],
-        name: map['name'],
-        price: map['price']?.toDouble(),
-        qty: map['qty']?.toInt(),
-        description: map['description'],
-        createdOn: map['createdOn'],
-        updatedOn: map['updatedOn'],
-        createdBy: map['createdBy'],
-      currency: map['currency'], // ✅ included
+      amenitiesId: map['amenitiesId']?.toInt() ?? 0,
+      amenitiesUuid: map['amenitiesUuid'],
+      hotelUuid: map['hotelUuid'],
+      name: map['name'],
+      price: map['price']?.toDouble(),
+      qty: map['qty']?.toInt(),
+      description: map['description'],
+      createdOn: map['createdOn'],
+      updatedOn: map['updatedOn'],
+      createdBy: map['createdBy'],
     );
-    }
+  }
 }

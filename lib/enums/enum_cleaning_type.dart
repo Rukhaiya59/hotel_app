@@ -1,0 +1,1 @@
+enum CleaningType { stayover, checkout }

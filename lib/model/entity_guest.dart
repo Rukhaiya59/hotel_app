@@ -27,6 +27,12 @@ class EntityGuest {
   String? address; // Added guest address
   String? nationality; // Added guest information
   String? notes; // Added for special requests/notes
+//neww
+  String guestType;
+  double totalSpending;
+  int totalVisits;
+  String? preferencesJson;
+  String? tagsJson;
 
   // Relationship with booking
   final bookings = ToMany<EntityBooking>();
@@ -51,31 +57,14 @@ class EntityGuest {
     this.address,
     this.nationality,
     this.notes,
+// New CRM fields default
+    this.guestType = "walkin",
+    this.totalSpending = 0.0,
+    this.totalVisits = 0,
+    this.preferencesJson,
+    this.tagsJson,
   });
 
-  // fromJson factory method
-  factory EntityGuest.fromJson(Map<String, dynamic> json) {
-    return EntityGuest(
-      id: json['id'] ?? 0,
-      guestId: json['guestId'],
-      guestUuid: json['guestUuid'],
-      first: json['first'],
-      last: json['last'],
-      dob: json['dob'],
-      gender: json['gender'],
-      idName: json['idName'],
-      idValue: json['idValue'],
-      createdOn: json['createdOn'],
-      createdBy: json['createdBy'],
-      updatedOn: json['updatedOn'],
-      hotelUuid: json['hotelUuid'],
-      phone: json['phone'],
-      email: json['email'],
-      address: json['address'],
-      nationality: json['nationality'],
-      notes: json['notes'],
-    );
-  }
 
   // toMap method
   Map<String, dynamic> toMap() {
@@ -98,11 +87,23 @@ class EntityGuest {
       'address': address,
       'nationality': nationality,
       'notes': notes,
-      // Note: 'bookings' is a ToMany relationship and is not typically included in JSON serialization.
-      // ObjectBox manages this relation separately. If you need to serialize it,
-      // you would need a more complex logic, for example:
+      'guestType': guestType,
+      'totalSpending': totalSpending,
+      'totalVisits': totalVisits,
+      'preferencesJson': preferencesJson,
+      'tagsJson': tagsJson,
+      // Note: ToMany relationship 'bookings' is not typically included in a simple toMap,
+      // as it would require converting a list of complex objects.
+      // If needed, you would map over 'bookings' and call toMap() on each EntityBooking.
       // 'bookings': bookings.map((booking) => booking.toMap()).toList(),
-      // But this can lead to circular dependencies if EntityBooking also serializes EntityGuest.
     };
-    }
+  }
 }
+
+
+
+
+
+
+
+

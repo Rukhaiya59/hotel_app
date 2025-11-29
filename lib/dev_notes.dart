@@ -15,7 +15,6 @@ final RepoGetStorage _repoGetStorage = Get.find();
 _repoGetStorage.getHotelUuid()
 
 decoration: BoxDecoration(gradient: AppTheme.gradient(isDark: themeService.isDarkMode))
-
     final query = boxUser.query(EntityUser_.role.equals("Housekeeping")).build();
     rxUsers.value = query.find();
 

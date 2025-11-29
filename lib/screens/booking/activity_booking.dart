@@ -1,25 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:hotel/screens/booking/dailogs/edit_amenity_dailog.dart';
 import 'package:hotel/screens/booking/print/booking_print_overview.dart';
 import 'package:hotel/util/app_color.dart';
 import 'package:hotel/util/snackbar_util.dart';
 import 'package:hotel/widgets/primary_button.dart';
 import 'package:hotel/widgets/text_header.dart';
+import 'package:path/path.dart';
 import '../../enums/enum_room_status.dart';
+import '../../model/entity_booking.dart';
 import '../../model/entity_room.dart';
 import '../../service/service_currency.dart';
 import '../room/ameneties/contoller_amenities.dart';
 import 'controller_booking.dart';
+import 'dailogs/dailog_discount_show.dart';
+import 'dailogs/edit_payment_dialog.dart';
+import 'split_bill/activity_split_bill.dart';
+import 'controller_booking.dart';
+import 'controller_cancel_reason.dart';
 import 'controller_guest_dialog.dart';
 import 'controller_payment_dialog.dart';
 
 class ActivityBooking extends StatelessWidget {
-  const ActivityBooking({super.key});
+  final EntityBooking? editBooking;
+
+  const ActivityBooking({super.key, this.editBooking});
 
   @override
   Widget build(BuildContext context) {
-    final EntityRoom room = Get.arguments;
+    final EntityRoom room = editBooking?.room.target ?? Get.arguments;
     final ControllerBooking controller = Get.put(
       ControllerBooking(initialRoom: room),
     );
@@ -30,12 +40,20 @@ class ActivityBooking extends StatelessWidget {
     final ControllerAmenities controllerAmenities = Get.put(
       ControllerAmenities(),
     );
-    final currencyService = Get.find<ServiceCurrency>();//currency
+    // final ControllerCancelReason cancelReasonCtrl = Get.put(
+    //   ControllerCancelReason(),
+    // );
+
+    final currencyService = Get.find<ServiceCurrency>();
+
+    if (editBooking != null) {
+      controller.loadExistingReservation(editBooking!);
+    }
 
     return Scaffold(
       appBar: AppBar(
         title: Obx(
-              () => Text(
+          () => Text(
             "Room Booking - ${controller.room.value.status?.toUpperCase()}",
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
@@ -49,7 +67,6 @@ class ActivityBooking extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            // LEFT PANEL - GUEST DETAILS
             Expanded(
               flex: 1,
               child: Card(
@@ -64,6 +81,7 @@ class ActivityBooking extends StatelessWidget {
                     children: [
                       const TextHeader(message: "Guest Details"),
                       const SizedBox(height: 10),
+
                       Expanded(
                         child: Obx(() {
                           if (controller.rxListGuest.isEmpty) {
@@ -72,27 +90,45 @@ class ActivityBooking extends StatelessWidget {
                           return ListView.builder(
                             itemCount: controller.rxListGuest.length,
                             itemBuilder: (_, i) {
-                              final itemGuest = controller.rxListGuest[i];
+                              final guest = controller.rxListGuest[i];
                               return ListTile(
-                                title: Text(
-                                  "${itemGuest.first} ${itemGuest.last}",
-                                ),
+                                title: Text("${guest.first} ${guest.last}"),
                                 subtitle: Text(
-                                  "${itemGuest.phone} | ${itemGuest.email}",
+                                  "${guest.phone} | ${guest.email}",
                                 ),
-                                trailing: IconButton(
-                                  icon: const Icon(
-                                    Icons.delete,
-                                    color: Colors.red,
-                                  ),
-                                  onPressed: () =>
-                                      controller.rxListGuest.removeAt(i),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.edit,
+                                        color: Colors.blue,
+                                      ),
+                                      onPressed: () {
+                                        guestDialog.showGuestDialog(
+                                          context,
+                                          controller.rxListGuest,
+                                          editGuest: guest,
+                                          index: i,
+                                        );
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.delete,
+                                        color: Colors.red,
+                                      ),
+                                      onPressed: () =>
+                                          controller.rxListGuest.removeAt(i),
+                                    ),
+                                  ],
                                 ),
                               );
                             },
                           );
                         }),
                       ),
+
                       Align(
                         alignment: Alignment.centerRight,
                         child: PrimaryButton(
@@ -111,8 +147,6 @@ class ActivityBooking extends StatelessWidget {
             ),
 
             const SizedBox(width: 12),
-
-            // RIGHT PANEL - BOOKING DETAILS
             Expanded(
               flex: 1,
               child: Card(
@@ -126,22 +160,18 @@ class ActivityBooking extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const TextHeader(
-                          message: "Booking & Payment Details",
-                        ),
-
+                        const TextHeader(message: "Booking Details"),
                         const SizedBox(height: 10),
 
-                        // CHECK-IN / CHECK-OUT
+                        // CHECK-IN / CHECK-OUT ROW
                         Row(
                           children: [
                             Expanded(
                               child: TextField(
                                 controller: controller.checkInCtrl,
                                 readOnly: true,
-
                                 decoration: const InputDecoration(
-                                  labelText: 'Check-In Date & Time',
+                                  labelText: 'Check-In',
                                   prefixIcon: Icon(Icons.calendar_today),
                                   border: OutlineInputBorder(),
                                 ),
@@ -160,7 +190,7 @@ class ActivityBooking extends StatelessWidget {
                                 controller: controller.checkOutCtrl,
                                 readOnly: true,
                                 decoration: const InputDecoration(
-                                  labelText: "Check-Out Date & Time",
+                                  labelText: "Check-Out",
                                   border: OutlineInputBorder(),
                                 ),
                                 onTap: () async {
@@ -174,36 +204,30 @@ class ActivityBooking extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 12),
 
-                        // DISCOUNT DETAILS
-                        const TextHeader(message: "Discount Details"),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: controller.tecDiscountDescription,
-                          decoration: const InputDecoration(
-                            labelText: "Discount Description",
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: controller.tecDiscountPrice,
-                          decoration: InputDecoration(
-                        labelText: "Discount Price (${currencyService.symbol})",//currency
-                            border: const OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.number,
-                          inputFormatters: <TextInputFormatter>[
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
-                          onChanged: (v) {
-                            controller.updateTotal();
-                          },
-                        ),
+                        // AUTO DISCOUNT BANNER
+                        Obx(() {
+                          if (controller.autoDiscount.value == 0) {
+                            return const SizedBox();
+                          }
+                          return Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              "Auto Discount: ${currencyService.symbol}${controller.autoDiscount.value.toStringAsFixed(2)}",
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          );
+                        }),
                         const SizedBox(height: 10),
-
-                        // PAYMENTS & AMENITIES
+                        // PAYMENT + AMENITIES BUTTON ROW
                         Row(
                           children: [
                             ElevatedButton.icon(
@@ -212,92 +236,99 @@ class ActivityBooking extends StatelessWidget {
                               onPressed: () async {
                                 final selected = await paymentDialog
                                     .showPaymentDialog(
-                                  context,
-                                  controller.rxListPayment,
-                                );
-                                debugPrint("selected: ${selected.length}");
-                                // controller.rxListPayment.value = selected;
+                                      context,
+                                      controller.rxListPayment,
+                                    );
                                 controller.updateTotal();
                               },
                             ),
                             const SizedBox(width: 10),
+
                             ElevatedButton.icon(
                               icon: const Icon(Icons.room_service),
                               label: const Text("Add Amenities"),
                               onPressed: () async {
                                 final selected = await controllerAmenities
                                     .showAmenitiesDialog(
-                                  preSelected: controller.rxListAmenities,
-                                );
-                                controller.rxListAmenities.assignAll(
-                                  selected,
-                                );
+                                      preSelected: controller.rxListAmenities,
+                                    );
+                                controller.rxListAmenities.assignAll(selected);
                                 controller.updateTotal();
                               },
                             ),
-                          ],
+                          ], // End of button Row
                         ),
                         const SizedBox(height: 10),
-
-                        // SHOW SELECTED AMENITIES
+                        // SELECTED AMENITIES LIST
                         const Text(
-                          "Selected Amenities",
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          "Amenities",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
                         ),
+                        const SizedBox(height: 6),
                         Obx(() {
                           if (controller.rxListAmenities.isEmpty) {
                             return const Text("No amenities selected");
                           }
-
-                          double totalAmenityCost = controller.rxListAmenities
-                              .fold(
+                          double totalAmenityCost =
+                              controller.rxListAmenities.fold(
                             0.0,
-                                (sum, item) =>
-                            sum +
-                                ((item.price ?? 0) * (item.qty ?? 1)),
+                            (sum, item) =>
+                                sum + ((item.price ?? 0) * (item.qty ?? 1)),
                           );
-
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               ...controller.rxListAmenities.map(
-                                    (a) => ListTile(
-                                  dense: true,
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Text(a.name ?? "Unnamed Amenity"),
-                            subtitle: Text(
-                                       "${currencyService.symbol}${a.price?.toStringAsFixed(2) ?? '0.00'} × ${a.qty ?? 1}",
-                             ),
-                                  trailing: IconButton(
-                                    icon: const Icon(
-                                      Icons.delete,
-                                      color: Colors.red,
-                                    ),
+                                (a) => ListTile(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(a.name ?? "Unnamed Amenity"),
+                              subtitle: Text(
+                                "${currencyService.symbol}${a.price?.toStringAsFixed(2) ?? '0.00'} × ${a.qty ?? 1}",
+                              ),
+
+                              trailing: Row( // <-- Start of trailing Row
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit, color: Colors.blue),
+                                    onPressed: () {
+                                      showEditSelectedAmenityDialog(a);
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
                                     onPressed: () {
                                       controller.rxListAmenities.remove(a);
                                       controller.updateTotal();
                                     },
                                   ),
-                                ),
+                                 ], // <-- End of children for trailing Row
+                               ), // <-- End of trailing Row
+                                ), // <-- End of ListTile
                               ),
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  top: 4.0,
-                                  left: 8,
-                                ),
-                                child: Text(
-                                  "Total Amenities Cost: ₹${totalAmenityCost.toStringAsFixed(2)}",
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "Amenities Total: ${currencyService.symbol}${totalAmenityCost.toStringAsFixed(2)}",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],
                           );
                         }),
                         const SizedBox(height: 10),
-
-                        // PAYMENTS LIST
+                        const Text(
+                          "Payments",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
                         Obx(() {
                           if (controller.rxListPayment.isEmpty) {
                             return const Text("No payment added");
@@ -307,21 +338,33 @@ class ActivityBooking extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               ...controller.rxListPayment.map(
-                                    (a) => ListTile(
+                                (p) => ListTile(
                                   dense: true,
                                   contentPadding: EdgeInsets.zero,
-                                  title: Text(a.paymentMode),
-                            subtitle: Text(
-                                        "${currencyService.symbol}${a.amount.toStringAsFixed(2)}"),
-                                  trailing: IconButton(
-                                    icon: const Icon(
-                                      Icons.delete,
-                                      color: Colors.red,
-                                    ),
-                                    onPressed: () {
-                                      controller.rxListPayment.remove(a);
-                                      controller.updateTotal();
-                                    },
+                                  title: Text(p.paymentMode),
+                                  subtitle: Text(
+                                    "${currencyService.symbol}${p.amount.toStringAsFixed(2)}",
+                                  ),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // ⭐ EDIT ICON
+                                      IconButton(
+                                        icon: const Icon(Icons.edit, color: Colors.blue),
+                                        onPressed: () {
+                                          showEditPaymentDialog(p);
+                                        },
+                                      ),
+
+                                      // DELETE ICON
+                                      IconButton(
+                                        icon: const Icon(Icons.delete, color: Colors.red),
+                                        onPressed: () {
+                                          controller.rxListPayment.remove(p);
+                                          controller.updateTotal();
+                                        },
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
@@ -330,7 +373,7 @@ class ActivityBooking extends StatelessWidget {
                         }),
                         const SizedBox(height: 10),
 
-                        // NOTES & TOTAL
+                        // NOTES
                         TextField(
                           controller: controller.notesCtrl,
                           maxLines: 2,
@@ -339,105 +382,245 @@ class ActivityBooking extends StatelessWidget {
                             border: OutlineInputBorder(),
                           ),
                         ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                readOnly: true,
-                                controller: controller.totalCtrl,
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                               labelText: "Total Bill (${currencyService.symbol})",//currency
-                                  border: const OutlineInputBorder(),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: TextField(
-                                controller: controller.tecPaidAmount,
-                                keyboardType: TextInputType.number,
-                                readOnly: true,
-                                decoration: InputDecoration(
-                                  labelText: "Paid Amount (${currencyService.symbol})",//currency
-                                  border: const OutlineInputBorder(),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: TextField(
-                                readOnly: true,
-                                controller: controller.tecRemaining,
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                    labelText: "Remaining Amount (${currencyService.symbol})",//currency
-                                  border: const OutlineInputBorder(),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            // 🟩 1️⃣ BOOK ROOM BUTTON
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                controller.saveBooking();
-                              },
-                              icon: const Icon(Icons.book_online),
-                              label: const Text("Book Room"),
-                            ),
-
-                            // 🟨 2️⃣ PREVIEW BILL BUTTON (👉 ye naya add karna hai)
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                final booking = controller.selectedBooking.value;
-                                if (booking != null) {
-                                  Get.to(() => BookingPrintOverview(booking: booking));
-                                } else {
-                                  SnackbarUtil.showError("No booking found to print overview.");
-                                }
-                              },
-                              icon: const Icon(Icons.print),
-                              label: const Text("Preview Bill"),
-                            ),
-
-
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                controller.updateRoomStatus(EnumRoomStatus.cleaning);
-                                SnackbarUtil.showSuccess("Room marked for cleaning");
-                              },
-                              icon: const Icon(Icons.logout),
-                              label: const Text("Checkout"),
-                            ),
-
-                            // 🟦 4️⃣ CLEANING DONE BUTTON
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                controller.updateRoomStatus(EnumRoomStatus.available);
-                                SnackbarUtil.showSuccess("Room is now available");
-                              },
-                              icon: const Icon(Icons.cleaning_services),
-                              label: const Text("Cleaning Done"),
-                            ),
-                          ],
-                        ),
-
-                      ],
-                    ),
-                  ),
-                    ),
+                    ]),
                   ),
                 ),
-            ],
+              ),
+            ),
 
-      ),
+            const SizedBox(height: 12),
+
+            Expanded(
+              flex: 1,
+              child: Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Obx(() {
+                    final roomRate = controller.roomRate;
+                    final amenityTotal = controller.amenitiesTotal;
+                    final discount = controller.autoDiscount.value;
+                    final total = controller.totalBill;
+                    final paid = controller.paidAmount;
+                    final remaining = controller.remainingAmount;
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Bill Summary",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        _summaryRow(
+                          "Room Rate",
+                          "₹${roomRate.toStringAsFixed(2)}",
+                        ),
+                        const SizedBox(height: 8),
+
+                        _summaryRow(
+                          "Amenities Total",
+                          "₹${amenityTotal.toStringAsFixed(2)}",
+                        ),
+                        const SizedBox(height: 8),
+
+                        _summaryRow(
+                          "Discount",
+                          "-₹${discount.toStringAsFixed(2)}",
+                        ),
+                        const Divider(thickness: 1.2),
+                        const SizedBox(height: 6),
+
+                        _summaryRow(
+                          "TOTAL BILL",
+                          "₹${total.toStringAsFixed(2)}",
+                          isBold: true,
+                          fontSize: 18,
+                        ),
+
+                        const SizedBox(height: 20),
+                        const Text(
+                          "Advance Payment",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+
+                        _summaryRow(
+                          "Paid",
+                          "₹${paid.toStringAsFixed(2)}",
+                          color: Colors.green,
+                        ),
+                        _summaryRow(
+                          "Remaining",
+                          "₹${remaining.toStringAsFixed(2)}",
+                          color: Colors.red,
+                        ),
+
+                        const SizedBox(height: 22),
+
+                        // ============================
+                        // ACTION BUTTONS
+                        // ============================
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: [
+                            SizedBox(
+                              width: 150,
+                              child: ElevatedButton.icon(
+                                onPressed: () => controller.saveBooking(),
+                                icon: const Icon(Icons.book_online),
+                                label: Obx(
+                                  () => controller.selectedBooking.value == null
+                                      ? const Text("Book Room")
+                                      : const Text("Save"),
+                                ),
+                              ),
+                            ),
+
+                            SizedBox(
+                              width: 150,
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  final booking =
+                                      controller.selectedBooking.value;
+                                  if (booking != null) {
+                                    Get.to(
+                                      () => BookingPrintOverview(
+                                        booking: booking,
+                                      ),
+                                    );
+                                  } else {
+                                    SnackbarUtil.showError(
+                                      "No booking to preview.",
+                                    );
+                                  }
+                                },
+                                icon: const Icon(Icons.print),
+                                label: const Text("Preview Bill"),
+                              ),
+                            ),
+
+                            SizedBox(
+                              width: 150,
+                              child: ElevatedButton.icon(
+                                onPressed: () => controller.checkoutBooking(),
+                                icon: const Icon(Icons.logout),
+                                label: const Text("Checkout"),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orangeAccent,
+                                ),
+                              ),
+                            ),
+
+                            SizedBox(
+                              width: 150,
+                              child: ElevatedButton.icon(
+                                onPressed: () =>
+                                    controller.openRoomChangeDialog(context),
+                                icon: const Icon(Icons.swap_horiz),
+                                label: const Text("Change Room"),
+                              ),
+                            ),
+
+                            SizedBox(
+                              width: 150,
+                              child: ElevatedButton.icon(
+                                onPressed: () => controller.cancelBooking(context),
+                                icon: const Icon(Icons.cancel),
+                                label: const Text("Cancel"),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.redAccent,
+                                ),
+
+
+                              ),
+                            ),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.call_split),
+                              label: const Text("Split Bill"),
+                              onPressed: () async {
+
+                                await controller.updateTotal(); // ensure latest totals
+
+                                final result = await Get.to(
+                                      () => SplitBillScreen(
+                                    totalAmount: double.tryParse(controller.totalCtrl.text) ??
+                                        controller.totalBill,
+                                    guests: controller.rxListGuest.toList(),
+                                    facilities: controller.rxListAmenities.toList(),
+                                  ),
+                                );
+
+                                if (result != null) {
+                                  controller.autoCreateSplitPayments(result);
+                                  await controller.updateTotal();
+                                }
+                              },
+
+                            ),
+                            SizedBox(
+                              width: 150,
+                              child: ElevatedButton.icon(
+                                icon: const Icon(Icons.percent),
+                                label: const Text("View Discount"),
+                                onPressed: () =>
+                                    DiscountSelectDialog.show(context),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    );
+                  }),
+                ),
+              ),
+            ),
+      ]  ),
     ));
   }
+}
+
+// ============
+// SUMMARY ROW
+// ============
+Widget _summaryRow(
+  String label,
+  String value, {
+  bool isBold = false,
+  double fontSize = 14,
+  Color? color,
+}) {
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Text(
+        label,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+        ),
+      ),
+      Text(
+        value,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+          color: color,
+        ),
+      ),
+
+    ],
+
+  );
 }

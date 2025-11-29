@@ -23,13 +23,52 @@ class RepoConstants {
         ModelIconString(
             icon: Icons.room,
             title: EnumDrawerMenu.room.value.tr),
+        // ModelIconString(
+        //   icon: Icons.build,
+        //   title: EnumDrawerMenu.maintenance.value.tr,
+        // ),
+        // ModelIconString(
+        //     icon: Icons.receipt_long,
+        //     title: EnumDrawerMenu.tax.value.tr),
         ModelIconString(
-          icon: Icons.build,
-          title: EnumDrawerMenu.maintenance.value.tr,
+          icon: Icons.local_offer,
+          title: EnumDrawerMenu.discount.value.tr,
         ),
         ModelIconString(
-            icon: Icons.receipt_long,
-            title: EnumDrawerMenu.tax.value.tr),
+          icon: Icons.attach_money,
+          title: EnumDrawerMenu.expense.value.tr,
+        ),
+
+        ModelIconString(
+            icon: Icons.report,
+            title: EnumDrawerMenu.report.value.tr),
+        ModelIconString(
+          icon: Icons.inventory,
+          title: EnumDrawerMenu.inventory.value.tr,
+        ),
+        ModelIconString(
+          icon: Icons.list_alt,
+          title: EnumDrawerMenu.booking.value.tr,
+        ),
+        ModelIconString(
+          icon: Icons.event_available_sharp,
+          title: EnumDrawerMenu.reservation.value.tr,
+        ),
+        ModelIconString(
+          icon: Icons.add_task,
+          title: EnumDrawerMenu.housekeeping.value.tr,
+        ),
+
+        ModelIconString(
+          icon: Icons.room_outlined,
+          title: EnumDrawerMenu.bookingHistory.value.tr,
+        ),
+        ModelIconString(
+          icon: Icons.person,
+          title: EnumDrawerMenu.guest.value.tr,
+        ),
+
+
       ];
 
       listReturn.addAll(listOwner);
@@ -42,11 +81,25 @@ class RepoConstants {
           icon: Icons.list_alt,
           title: EnumDrawerMenu.booking.value.tr,
         ),
+        ModelIconString(
+          icon: Icons.event_available_sharp,
+          title: EnumDrawerMenu.reservation.value.tr,
+        ),
+        ModelIconString(
+          icon: Icons.add_task,
+          title: EnumDrawerMenu.housekeeping.value.tr,
+        ),
 
         ModelIconString(
           icon: Icons.room_outlined,
           title: EnumDrawerMenu.bookingHistory.value.tr,
         ),
+        ModelIconString(
+          icon: Icons.person,
+          title: EnumDrawerMenu.guest.value.tr,
+        ),
+
+
       ];
       listReturn.addAll(listOwner);
     }
@@ -62,10 +115,6 @@ class RepoConstants {
 
     if (strUserRole == EnumRole.housekeeping.value) {
       List<ModelIconString> listOwner = [
-        ModelIconString(
-          icon: Icons.dashboard,
-          title: EnumDrawerMenu.dashboard.value.tr,
-        ),
       ];
       listReturn.addAll(listOwner);
     }

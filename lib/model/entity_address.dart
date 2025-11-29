@@ -1,4 +1,5 @@
 import 'package:objectbox/objectbox.dart';
+
 @Entity()
 class EntityAddress {
   @Id()
@@ -26,24 +27,24 @@ class EntityAddress {
   });
 
   factory EntityAddress.fromJson(Map<String, dynamic> json) => EntityAddress(
-        addrUuid: json["addrUuid"],
-        hotelUuid: json["hotelUuid"],
-        addr1: json["addr1"],
-        addr2: json["addr2"],
-        state: json["state"],
-        city: json["city"],
-        country: json["country"],
-        pinCode: json["pinCode"],
-      );
+    addrUuid: json["addrUuid"],
+    hotelUuid: json["hotelUuid"],
+    addr1: json["addr1"],
+    addr2: json["addr2"],
+    state: json["state"],
+    city: json["city"],
+    country: json["country"],
+    pinCode: json["pinCode"],
+  );
 
   Map<String, dynamic> toMap() => {
-        "addrUuid": addrUuid,
-        "hotelUuid": hotelUuid,
-        "addr1": addr1,
-        "addr2": addr2,
-        "state": state,
-        "city": city,
-        "country": country,
-        "pinCode": pinCode,
-      };
+    "addrUuid": addrUuid,
+    "hotelUuid": hotelUuid,
+    "addr1": addr1,
+    "addr2": addr2,
+    "state": state,
+    "city": city,
+    "country": country,
+    "pinCode": pinCode,
+  };
 }

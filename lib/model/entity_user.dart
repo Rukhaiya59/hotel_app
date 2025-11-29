@@ -3,11 +3,11 @@ import 'entity_key_value.dart';
 
 @Entity()
 class EntityUser {
+
   @Id()
   int id = 0;
   String userUuid;
   String hotelUuid;
-
   String? first;
   String? middle;
   String? last;

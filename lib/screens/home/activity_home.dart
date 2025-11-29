@@ -3,10 +3,16 @@ import 'package:get/get.dart';
 import 'package:hotel/commons/loader.dart';
 import 'package:hotel/enums/enum_drawer_menu.dart';
 import 'package:hotel/model/model_icon_string.dart';
-import 'package:hotel/screens/home/fragment/maintenance/frag_home_maintenance.dart';
+import 'package:hotel/screens/home/histoy/activity_all_history.dart';
+import 'package:hotel/screens/home/histoy/frag_home_cleaning.dart';
+import 'package:hotel/screens/home/fragment/expenses/frag_home_expense_dashboard.dart';
+import 'package:hotel/screens/home/fragment/guest/frag_home_guest.dart';
+import 'package:hotel/screens/home/fragment/reservation/frag_home_reservation.dart';
 import 'package:hotel/screens/home/fragment/room/frag_home_room.dart';
 import 'package:hotel/screens/home/fragment/setting/frag_home_setting.dart';
 import 'package:hotel/screens/home/fragment/user/frag_home_user.dart';
+import '../../houskeeping/frag_home_housekeeping.dart';
+import '../../reports/activity_report.dart';
 import '../../util/app_color.dart';
 import '../../util/static_method.dart';
 import '../../widgets/primary_button.dart';
@@ -14,8 +20,10 @@ import 'controller_home.dart';
 import 'fragment/booking/frag_home_booking.dart';
 import 'fragment/booking_history/Frag_booking_history.dart';
 import 'fragment/dashboard/frag_home_dashboard.dart';
+import 'fragment/disscount/activity_add_disscount.dart';
+import 'fragment/disscount/frag_home_discount.dart';
 import 'fragment/inventory/frag_home_inventory.dart';
-import 'fragment/tax/frag_home_tax.dart';
+import 'fragment/maintenance/activity_maintenance_history.dart';
 import 'fragment/user/controller_user.dart';
 
 class ActivityHome extends StatelessWidget {
@@ -29,7 +37,7 @@ class ActivityHome extends StatelessWidget {
       body: Row(
         children: [
           Expanded(
-            flex: 2,
+            flex: 1,
             child: Container(
               // decoration: BoxDecoration(
               //   gradient: AppTheme.gradient(
@@ -47,7 +55,7 @@ class ActivityHome extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Colors.white, // White text like settings screen
                       ),
                     ),
                   ),
@@ -141,26 +149,52 @@ class ActivityHome extends StatelessWidget {
               //     EnumDrawerMenu.lostFound.value.tr) {
               //   return FragHomeLostAndFound();
               // }
+
+              // if (controller.rxSelectedDrawer.value.title ==
+              //     EnumDrawerMenu.cleaning.value.tr) {
+              //   return FragHousekeepingHistory();
+              // }
+              if (controller.rxSelectedDrawer.value.title ==
+                  EnumDrawerMenu.reservation.value.tr) {
+                return FragHomeReservation();
+              }
+              if (controller.rxSelectedDrawer.value.title ==
+                  EnumDrawerMenu.guest.value.tr) {
+                return FragHomeGuest();
+              }
               if (controller.rxSelectedDrawer.value.title ==
                   EnumDrawerMenu.booking.value.tr) {
                 return FragHomeBooking();
               }
               if (controller.rxSelectedDrawer.value.title ==
                   EnumDrawerMenu.bookingHistory.value.tr) {
-                return FragBookingHistory();
+                return ActivityAllHistory();
               }
               if (controller.rxSelectedDrawer.value.title ==
                   EnumDrawerMenu.inventory.value.tr) {
                 return FragHomeInventory();
               }
               if (controller.rxSelectedDrawer.value.title ==
-                  EnumDrawerMenu.tax.value.tr) {
-                return FragmentTax();
+                  EnumDrawerMenu.report.value.tr) {
+                return ActivityReport();
+              }
+
+              // if (controller.rxSelectedDrawer.value.title ==
+              //     EnumDrawerMenu.maintenance.value.tr) {
+              //   return ActivityMaintenanceHistory();
+              // }
+              if (controller.rxSelectedDrawer.value.title ==
+                  EnumDrawerMenu.discount.value.tr) {
+                return FragHomeDiscount();
               }
 
               if (controller.rxSelectedDrawer.value.title ==
-                  EnumDrawerMenu.maintenance.value.tr) {
-                return FragHomeMaintenance();
+                  EnumDrawerMenu.expense.value.tr) {
+                return ActivityExpenseDashboard();
+              }
+              if (controller.rxSelectedDrawer.value.title ==
+                  EnumDrawerMenu.housekeeping.value.tr) {
+                return FragHomeHousekeeping();
               }
               return const SizedBox();
             }),
@@ -172,9 +206,10 @@ class ActivityHome extends StatelessWidget {
             EnumDrawerMenu.user.value.tr) {
           return PrimaryButton(
             type: ActionType.refresh,
-            color: LightColor.primaryStart,
-            onPressed: () async {
-              Loader.showLoader();
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey        // DARK = WHITE BUTTON
+                  : Colors.grey,        // LIGHT = BLACK BUTTON            onPressed: () async {
+             onPressed: () async{  Loader.showLoader();
               await StaticMethod.loadUsersFromJson(controller.boxUser);
               ModelIconString selectedItem = controller.rxListDrawer.firstWhere(
                 (item) {
@@ -187,23 +222,20 @@ class ActivityHome extends StatelessWidget {
               Loader.hideLoader();
             },
           );
-        // } else if (controller.rxSelectedDrawer.value.title ==
-        //     EnumDrawerMenu.task.value.tr) {
-        //   return PrimaryButton(
-        //     type: ActionType.add,
-        //     color: LightColor.primaryStart,
-        //     onPressed: () => Get.to(() => ActivityTask()),
-        //   );
-        // } else if (controller.rxSelectedDrawer.value.title ==
-        //     EnumDrawerMenu.lostFound.value.tr) {
-        //   return PrimaryButton(
-        //     type: ActionType.add,
-        //     color: LightColor.primaryStart,
-        //     onPressed: () => Get.to(() => FragLostFoundCreate()),
-        //   );
+        }  if (controller.rxSelectedDrawer.value.title ==
+            EnumDrawerMenu.discount.value.tr) {
+          return PrimaryButton(
+            type: ActionType.add,
+            color: LightColor.primaryStart,
+            onPressed: () {
+              Get.dialog(
+                const ActivityAddDiscount(),
+                barrierDismissible: false,
+              );
+            },
+          );
         }
+
         return const SizedBox();
-      }),
-    );
-  }
-}
+      }));
+        }}

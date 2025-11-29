@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:hotel/widgets/primary_button.dart';
 import '../../../../util/app_color.dart';
 import '../../../inventory/activity_inventory.dart';
+import '../expenses/vendor/controller_vendor.dart';
 import 'controller_inventory.dart';
 
 class FragHomeInventory extends StatelessWidget {
@@ -11,6 +12,10 @@ class FragHomeInventory extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ControllerInventory controller = Get.put(ControllerInventory());
+
+    if (!Get.isRegistered<VendorController>()) {
+      Get.put(VendorController());
+    }
 
     return Obx(() {
       final list = controller.filteredInventory;
@@ -92,7 +97,7 @@ class FragHomeInventory extends StatelessWidget {
                 type: ActionType.add,
                 color: LightColor.primaryStart,
                 onPressed: () =>
-                    InventoryForm.showAddForm(context, controller),
+                    InventoryForm.showAddForm(Get.context!, controller)
               ),
             ),
           ),

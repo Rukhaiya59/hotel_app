@@ -18,10 +18,14 @@ dependencies:
   objectbox: ^4.3.0
   objectbox_flutter_libs: ^4.3.0
   intl: ^0.20.2
+  share_plus: ^12.0.1
   path: ^1.9.1
   path_provider: ^2.1.5
   uuid: ^4.5.1
   # object box--
+  timezone: ^0.10.1
+  flutter_local_notifications: ^19.5.0
+  table_calendar: ^3.2.0
   mongo_dart: ^0.10.5
 
 dev_dependencies:

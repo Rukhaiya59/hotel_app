@@ -2,8 +2,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import '../../../../enums/enum_room_status.dart';
-import '../../../../service/service_currency.dart';
+import 'package:hotel/enums/enum_room_status.dart';
+import 'package:hotel/service/service_currency.dart';
 import 'controller_dashboard.dart';
 
 class FragHomeDashboard extends StatelessWidget {
@@ -11,16 +11,32 @@ class FragHomeDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reportCtrl = Get.put(ControllerDashboard());
+    final dashboard = Get.put(ControllerDashboard());
     final currencyService = Get.find<ServiceCurrency>();
+    final symbol = currencyService.symbol;
 
+    final theme = Theme.of(context);
+    final textColor = theme.textTheme.bodyMedium?.color ?? Colors.white;
+    final fadedText = textColor.withOpacity(0.6);
+    final cardColor = theme.cardColor;
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        title: Text(
+          "Hotel Dashboard",
+          style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.date_range),
+            icon: Icon(Icons.refresh, color: textColor),
+            onPressed: () => dashboard.fetchReportData(),
+          ),
+          IconButton(
             tooltip: "Filter by Date Range",
+            icon: Icon(Icons.date_range, color: textColor),
             onPressed: () async {
               final picked = await showDateRangePicker(
                 context: context,
@@ -28,7 +44,7 @@ class FragHomeDashboard extends StatelessWidget {
                 lastDate: DateTime.now(),
               );
               if (picked != null) {
-                reportCtrl.fetchReportData(
+                dashboard.fetchReportData(
                   start: picked.start,
                   end: picked.end,
                 );
@@ -38,44 +54,57 @@ class FragHomeDashboard extends StatelessWidget {
         ],
       ),
       body: Obx(() {
-        if (reportCtrl.isLoading.value) {
+        if (dashboard.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final statusMap = reportCtrl.roomStatusCount;
-        final monthlyRev = reportCtrl.monthlyRevenueMap; // ✅ FIXED
+        final statusMap = dashboard.roomStatusCount;
+        final monthlyRev = dashboard.monthlyRevenueMap;
+        final weekRev = dashboard.weekRevenue.isEmpty
+            ? List<double>.filled(7, 0)
+            : dashboard.weekRevenue;
 
         return RefreshIndicator(
-          onRefresh: () async => reportCtrl.fetchReportData(),
+          onRefresh: () async => dashboard.fetchReportData(),
           child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ----------------- REVENUE SUMMARY -----------------
+                // ---------- SUMMARY ROW ----------
                 Row(
                   children: [
                     Expanded(
-                      flex: 1,
-                      child: Column(
-                        children: [
-                          const Text(
-                            "Revenue Summary",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              _miniBox("Daily", reportCtrl.dailyRevenue.value, Colors.orange, currencyService.symbol),
-                              _miniBox("Weekly", reportCtrl.weeklyRevenue.value, Colors.purple, currencyService.symbol),
-                              _miniBox("Monthly", reportCtrl.monthlyRevenue.value, Colors.teal, currencyService.symbol),
-                              _miniBox("Total", reportCtrl.totalRevenue.value, Colors.green, currencyService.symbol),
-                            ],
-                          ),
+                      child: _summaryCardRow(
+                        title: "Revenue",
+                        textColor: textColor,
+                        fadedText: fadedText,
+                        cards: [
+                          _SummaryItem("Today", dashboard.dailyRevenue.value, symbol),
+                          _SummaryItem("This Week", dashboard.weeklyRevenue.value, symbol),
+                          _SummaryItem("This Month", dashboard.monthlyRevenue.value, symbol),
+                          _SummaryItem("Total", dashboard.totalRevenue.value, symbol),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: _summaryCardRow(
+                        title: "Bookings",
+                        textColor: textColor,
+                        fadedText: fadedText,
+                        cards: [
+                          _SummaryItem("Today", dashboard.dailyBookings.value.toDouble(), ""),
+                          _SummaryItem("This Week", dashboard.weeklyBookings.value.toDouble(), ""),
+                          _SummaryItem("This Month", dashboard.monthlyBookings.value.toDouble(), ""),
+                          _SummaryItem("Total", dashboard.totalBookings.value.toDouble(), ""),
                         ],
                       ),
                     ),
@@ -84,211 +113,47 @@ class FragHomeDashboard extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // ---------------- BOOKINGS SUMMARY ----------------
+                // ---------- GRAPHS ----------
                 Row(
                   children: [
                     Expanded(
-                      flex: 1,
-                      child: Column(
-                        children: [
-                          const Text(
-                            "Bookings Summary",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                      flex: 3,
+                      child: _graphCard(
+                        title: "Weekly Room Sales",
+                        subtitle: "Last 7 days",
+                        child: SizedBox(
+                          height: 220,
+                          child: LineChart(
+                            _lineChartData(
+                              weekRev,
+                              dashboard.weekDays,
+                              theme,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              _miniBox(
-                                "Daily",
-                                reportCtrl.dailyBookings.value.toDouble(),
-                                Colors.orangeAccent,
-                                '',
-                              ),
-                              _miniBox(
-                                "Weekly",
-                                reportCtrl.weeklyBookings.value.toDouble(),
-                                Colors.purpleAccent,
-                                '',
-                              ),
-                              _miniBox(
-                                "Monthly",
-                                reportCtrl.monthlyBookings.value.toDouble(),
-                                Colors.tealAccent,
-                                '',
-                              ),
-                              _miniBox("Total",
-                                  reportCtrl.totalBookings.value.toDouble(), Colors.blue, ''),
-                            ],
-                          ),
-                        ],
+                        ),
+                        theme: theme,
+                        textColor: textColor,
                       ),
                     ),
-                  ],
-                ),
-
-                const SizedBox(height: 25),
-
-                // ---------------- PIE CHART + BAR GRAPH ----------------
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // PIE CHART
-                    Expanded(
-                      flex: 1,
-                      child: Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            children: [
-                              const Text(
-                                "Room Status Overview",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              if (statusMap.isEmpty)
-                                const Text(
-                                  "No Room Data Found",
-                                  style: TextStyle(color: Colors.grey),
-                                )
-                              else
-                                SizedBox(
-                                  height: 220,
-                                  child: PieChart(
-                                    PieChartData(
-                                      centerSpaceRadius: 45,
-                                      sectionsSpace: 3,
-                                      sections: _buildPieSections(statusMap),
-                                    ),
-                                  ),
-                                ),
-                              const SizedBox(height: 12),
-                              Wrap(
-                                spacing: 10,
-                                children: statusMap.entries.map((e) {
-                                  final s = EnumRoomStatus.getColor(e.key);
-                                  return Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 6,
-                                        backgroundColor: s,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        "${e.key} (${e.value})",
-                                        style: const TextStyle(fontSize: 12),
-                                      ),
-                                    ],
-                                  );
-                                }).toList(),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-
                     const SizedBox(width: 12),
-
-                    // BAR GRAPH
                     Expanded(
-                      flex: 1,
-                      child: Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            children: [
-                              const Text(
-                                "Monthly Revenue Trend",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              if (monthlyRev.isEmpty)
-                                const Text(
-                                  "No Revenue Data Found",
-                                  style: TextStyle(color: Colors.grey),
-                                )
-                              else
-                                SizedBox(
-                                  height: 220,
-                                  child: BarChart(
-                                    BarChartData(
-                                      gridData: FlGridData(
-                                        drawVerticalLine: false,
-                                      ),
-                                      borderData: FlBorderData(show: false),
-                                      barGroups: monthlyRev.entries
-                                          .map(
-                                            (e) => BarChartGroupData(
-                                          x: monthlyRev.keys
-                                              .toList()
-                                              .indexOf(e.key),
-                                          barRods: [
-                                            BarChartRodData(
-                                              toY: e.value,
-                                              color: Colors.blueAccent,
-                                              width: 14,
-                                              borderRadius:
-                                              BorderRadius.circular(4),
-                                            ),
-                                          ],
-                                        ),
-                                      )
-                                          .toList(),
-                                      titlesData: FlTitlesData(
-                                        bottomTitles: AxisTitles(
-                                          sideTitles: SideTitles(
-                                            showTitles: true,
-                                            reservedSize: 30,
-                                            getTitlesWidget: (value, meta) {
-                                              if (value >= 0 &&
-                                                  value <
-                                                      monthlyRev.keys.length
-                                                          .toDouble()) {
-                                                return Text(
-                                                  monthlyRev.keys.elementAt(
-                                                    value.toInt(),
-                                                  ),
-                                                  style: const TextStyle(
-                                                    fontSize: 10,
-                                                  ),
-                                                );
-                                              }
-                                              return const Text('');
-                                            },
-                                          ),
-                                        ),
-                                        leftTitles: AxisTitles(
-                                          sideTitles: SideTitles(
-                                            showTitles: true,
-                                            interval: 1000,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                            ],
+                      flex: 2,
+                      child: _graphCard(
+                        title: "Cashflow",
+                        subtitle: "Inflow",
+                        child: SizedBox(
+                          height: 220,
+                          child: LineChart(
+                            _cashflowData(
+                              inflow: dashboard.weekInflow,
+                              outflow: dashboard.weekOutflow,
+                              labels: dashboard.weekDays,
+                              theme: theme,
+                            ),
                           ),
                         ),
+                        theme: theme,
+                        textColor: textColor,
                       ),
                     ),
                   ],
@@ -296,12 +161,62 @@ class FragHomeDashboard extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // ---------------- DATE RANGE INFO ----------------
-                if (reportCtrl.startDate != null && reportCtrl.endDate != null)
+                // ---------- BOTTOM GRAPHS ----------
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: _graphCard(
+                        title: "Room Occupancy",
+                        subtitle: "Live status",
+                        theme: theme,
+                        textColor: textColor,
+                        child: statusMap.isEmpty
+                            ? SizedBox(
+                          height: 180,
+                          child: Center(
+                            child: Text("No room data", style: TextStyle(color: fadedText)),
+                          ),
+                        )
+                            : SizedBox(
+                          height: 220,
+                          child: PieChart(
+                            PieChartData(
+                              sectionsSpace: 3,
+                              centerSpaceRadius: 48,
+                              sections: _buildPieSections(statusMap, textColor),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 3,
+                      child: _graphCard(
+                        title: "Monthly Revenue Trend",
+                        subtitle: "This year",
+                        theme: theme,
+                        textColor: textColor,
+                        child: SizedBox(
+                          height: 220,
+                          child: monthlyRev.isEmpty
+                              ? Center(
+                            child: Text("No revenue data", style: TextStyle(color: fadedText)),
+                          )
+                              : BarChart(_monthlyRevenueBarData(monthlyRev, theme)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                if (dashboard.startDate != null)
                   Center(
                     child: Text(
-                      "Report: ${DateFormat('dd MMM').format(reportCtrl.startDate!)} - ${DateFormat('dd MMM yyyy').format(reportCtrl.endDate!)}",
-                      style: const TextStyle(color: Colors.grey),
+                      "${DateFormat('dd MMM').format(dashboard.startDate!)} - "
+                          "${DateFormat('dd MMM yyyy').format(dashboard.endDate!)}",
+                      style: TextStyle(color: fadedText, fontSize: 12),
                     ),
                   ),
               ],
@@ -312,58 +227,162 @@ class FragHomeDashboard extends StatelessWidget {
     );
   }
 
-  /// ------- Mini box for revenues & bookings -------
-  Widget _miniBox(String label, double value, Color color, String prefix) {
+  // ---------------------------------------------------------------------------
+  // Summary Cards Row
+  // ---------------------------------------------------------------------------
+
+  Widget _summaryCardRow({
+    required String title,
+    required Color textColor,
+    required Color fadedText,
+    required List<_SummaryItem> cards,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: TextStyle(color: fadedText, fontSize: 14, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 10),
+        Row(
+          children: cards
+              .map((c) => Expanded(child: _miniBox(c.label, c.value, c.prefix, textColor)))
+              .toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _miniBox(String label, double value, String prefix, Color textColor) {
     return Container(
-      width: 80,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.all(10),
       height: 80,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1), // ✅ modern API
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: textColor.withOpacity(0.2)),
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(label, style: TextStyle(color: textColor.withOpacity(0.7), fontSize: 12)),
+          const Spacer(),
           Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            "$prefix${value.toStringAsFixed(0)}",
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
+            "$prefix${value.toStringAsFixed(value == value.roundToDouble() ? 0 : 2)}",
+            style: TextStyle(color: textColor, fontSize: 17, fontWeight: FontWeight.bold),
           ),
         ],
       ),
     );
   }
 
-  /// ------- Pie sections with nice colors -------
-  List<PieChartSectionData> _buildPieSections(Map<String, int> statusMap) {
-    final total = statusMap.values.fold<int>(0, (a, b) => a + b);
-    return statusMap.entries.map((e) {
-      final s = EnumRoomStatus.getColor(e.key);
-      final percent = total == 0 ? 0 : (e.value / total) * 100;
-      return PieChartSectionData(
-        color: s,
-        value: e.value.toDouble(),
-        title: "${percent.toStringAsFixed(1)}%",
-        radius: 60,
-        titleStyle: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
+  // ---------------------------------------------------------------------------
+  // Graph card
+  // ---------------------------------------------------------------------------
+
+  Widget _graphCard({
+    required String title,
+    required Widget child,
+    required ThemeData theme,
+    required Color textColor,
+    String? subtitle,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: textColor.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.w600)),
+          if (subtitle != null)
+            Text(subtitle, style: TextStyle(color: textColor.withOpacity(0.6), fontSize: 11)),
+          const SizedBox(height: 10),
+          child,
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Charts
+  // ---------------------------------------------------------------------------
+
+  LineChartData _lineChartData(List<double> values, List<String> labels, ThemeData theme) {
+    final color = theme.colorScheme.secondary;
+
+    return LineChartData(
+      minX: 0,
+      maxX: 6,
+      minY: 0,
+      lineBarsData: [
+        LineChartBarData(
+          spots: List.generate(values.length, (i) => FlSpot(i.toDouble(), values[i])),
+          isCurved: true,
+          color: color,
+          barWidth: 3,
+          dotData: FlDotData(show: false),
         ),
+      ],
+    );
+  }
+
+  LineChartData _cashflowData({
+    required List<double> inflow,
+    required List<double> outflow,
+    required List<String> labels,
+    required ThemeData theme,
+  }) {
+    return LineChartData(
+      minX: 0,
+      maxX: 6,
+      minY: 0,
+      lineBarsData: [
+        LineChartBarData(
+          spots: List.generate(inflow.length, (i) => FlSpot(i.toDouble(), inflow[i])),
+          isCurved: true,
+          color: Colors.greenAccent,
+          barWidth: 3,
+          dotData: FlDotData(show: false),
+        ),
+      ],
+    );
+  }
+
+  BarChartData _monthlyRevenueBarData(Map<String, double> monthMap, ThemeData theme) {
+    final color = theme.colorScheme.primary;
+
+    return BarChartData(
+      barGroups: monthMap.entries.toList().asMap().entries.map((entry) {
+        final index = entry.key;
+        final data = entry.value;
+        return BarChartGroupData(
+          x: index,
+          barRods: [BarChartRodData(toY: data.value, color: color, width: 14)],
+        );
+      }).toList(),
+    );
+  }
+
+  List<PieChartSectionData> _buildPieSections(Map<String, int> map, Color textColor) {
+    final total = map.values.fold(0, (a, b) => a + b);
+    return map.entries.map((e) {
+      final percent = (e.value / total) * 100;
+      return PieChartSectionData(
+        value: e.value.toDouble(),
+        color: EnumRoomStatus.getColor(e.key),
+        radius: 55,
+        title: "${percent.toStringAsFixed(1)}%",
+        titleStyle: TextStyle(color: textColor, fontSize: 11, fontWeight: FontWeight.bold),
       );
     }).toList();
   }
+}
+
+class _SummaryItem {
+  final String label;
+  final double value;
+  final String prefix;
+  _SummaryItem(this.label, this.value, this.prefix);
 }
