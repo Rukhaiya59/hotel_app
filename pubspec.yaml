@@ -46,5 +46,4 @@ flutter:
   # assets/json/users.json
   assets:
     - assets/json/
-    - assets/image/
-#    - assets/rh.png
+    - assets/images/rh.png

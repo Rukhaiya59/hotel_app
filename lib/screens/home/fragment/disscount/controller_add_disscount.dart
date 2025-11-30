@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../model/entity_discount.dart';
+import '../../../../util/snackbar_util.dart';
 import 'controller_discount.dart';
 
 class ControllerAddDiscount extends GetxController {
@@ -85,7 +86,7 @@ class ControllerAddDiscount extends GetxController {
       Get.snackbar("Saved", "Discount Added");
     } else {
       Get.find<DiscountController>().updateDiscount(discount);
-      Get.snackbar("Updated", "Discount Updated");
+      SnackbarUtil.showSuccess("Updated" "Discount Updated");
     }
 
     clearForm();

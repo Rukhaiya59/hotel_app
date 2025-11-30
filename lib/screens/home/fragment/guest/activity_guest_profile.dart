@@ -1,10 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../../../../model/entity_guest.dart';
 import '../../../../util/app_color.dart';
-import '../../../../util/snackbar_util.dart';
-import '../../../../widgets/primary_button.dart';
 
 class ActivityGuestProfile extends StatelessWidget {
   final EntityGuest guest;

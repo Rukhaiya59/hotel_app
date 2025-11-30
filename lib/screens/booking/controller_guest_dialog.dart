@@ -88,12 +88,9 @@ class ControllerGuestDialog extends GetxController {
                       prefsList.value = decodeList(guest.preferencesJson);
                       tagList.value = decodeList(guest.tagsJson);
 
-                      Get.snackbar(
-                        "Guest Found",
-                        "Auto-filled previous records",
-                        snackPosition: SnackPosition.BOTTOM,
-                        backgroundColor: Colors.green.withOpacity(0.8),
-                        colorText: Colors.white,
+                      SnackbarUtil.showSuccess(
+                        "Guest Found"
+                        "Auto-filled previous records"
                       );
                     }
                   }

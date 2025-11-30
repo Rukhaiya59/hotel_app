@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hotel/util/snackbar_util.dart';
 
 import '../../model/entity_user.dart';
 import '../../model/entity_room.dart';
@@ -109,11 +110,11 @@ class DialogAssignCleaning extends StatelessWidget {
           child: const Text("Assign"),
           onPressed: () {
             if (selectedStaff.value == null) {
-              Get.snackbar("Error", "Please select staff");
-              return;
+SnackbarUtil.showError("Error" "Please select staff")    ;
+return;
             }
             if (selectedRoom.value == null) {
-              Get.snackbar("Error", "Please select room");
+              SnackbarUtil.showError("Error" "Please select room");
               return;
             }
 

@@ -23,7 +23,7 @@ class _SplitPercentScreenState extends State<SplitPercentScreen> {
   void initState() {
     super.initState();
     for (var g in widget.guests) {
-      ctrls[g.guestUuid!] = TextEditingController();
+      ctrls[g.guestUuid] = TextEditingController();
     }
   }
 

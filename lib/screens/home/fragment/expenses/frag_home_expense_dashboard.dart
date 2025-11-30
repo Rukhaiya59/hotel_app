@@ -122,7 +122,7 @@ class ActivityExpenseDashboard extends StatelessWidget {
   // -------------------------------------------------------
   AppBar _appBar(BuildContext context) {
     return AppBar(
-      title: const Text("Expense Dashboard"),
+      // title: const Text("Expense Dashboard"),
       elevation: 1,
       backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
@@ -148,11 +148,11 @@ class ActivityExpenseDashboard extends StatelessWidget {
           icon: const Icon(Icons.download, color: Colors.purple),
           label: const Text("Export"),
         ),
-        TextButton.icon(
-          onPressed: () => expenseCtrl.deleteAllVendorsAndCategories(),
-          icon: const Icon(Icons.delete_forever, color: Colors.red),
-          label: const Text("Delete All"),
-        ),
+        // TextButton.icon(
+        //   onPressed: () => expenseCtrl.deleteAllVendorsAndCategories(),
+        //   icon: const Icon(Icons.delete_forever, color: Colors.red),
+        //   label: const Text("Delete All"),
+        // ),
 
         const SizedBox(width: 20),
       ],
@@ -235,33 +235,27 @@ class ActivityExpenseDashboard extends StatelessWidget {
           const SizedBox(width: 10),
           ElevatedButton.icon(
             onPressed: () async {
-              final now = DateTime.now();
-              final range = await showDateRangePicker(
+              final picked = await showDatePicker(
                 context: Get.context!,
+                initialDate: DateTime.now(),
                 firstDate: DateTime(2000),
                 lastDate: DateTime(2100),
-                initialDateRange: DateTimeRange(
-                  start: expenseCtrl.dateFrom.value ??
-                      now.subtract(const Duration(days: 30)),
-                  end: expenseCtrl.dateTo.value ?? now,
-                ),
               );
-              if (range != null) {
-                expenseCtrl.setDateRange(range.start, range.end);
+
+              if (picked != null) {
+                // Set both from & to same date → single-day filter
+                expenseCtrl.setDateRange(picked, picked);
               }
             },
-            icon: const Icon(Icons.date_range),
-            label: const Text("Date"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue.shade50,
-            ),
-          ),
+            icon: Icon(Icons.calendar_today),
+            label: Text("Select Date"),
+          )
+
         ],
       );
     });
   }
 
-  // -------------------------------------------------------
   InputDecoration _dropDecoration(BuildContext context, String label) {
     return InputDecoration(
       filled: true,
@@ -272,7 +266,6 @@ class ActivityExpenseDashboard extends StatelessWidget {
     );
   }
 
-  // -------------------------------------------------------
   Widget _expenseTable(BuildContext context) {
     return Obx(() {
       final list = expenseCtrl.expensesDisplayed;
@@ -296,7 +289,6 @@ class ActivityExpenseDashboard extends StatelessWidget {
     });
   }
 
-  // -------------------------------------------------------
   Widget _tableHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),

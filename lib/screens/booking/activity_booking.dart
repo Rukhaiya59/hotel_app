@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:hotel/screens/booking/dailogs/edit_amenity_dailog.dart';
 import 'package:hotel/screens/booking/print/booking_print_overview.dart';
@@ -7,7 +6,6 @@ import 'package:hotel/util/app_color.dart';
 import 'package:hotel/util/snackbar_util.dart';
 import 'package:hotel/widgets/primary_button.dart';
 import 'package:hotel/widgets/text_header.dart';
-import 'package:path/path.dart';
 import '../../enums/enum_room_status.dart';
 import '../../model/entity_booking.dart';
 import '../../model/entity_room.dart';
@@ -17,8 +15,6 @@ import 'controller_booking.dart';
 import 'dailogs/dailog_discount_show.dart';
 import 'dailogs/edit_payment_dialog.dart';
 import 'split_bill/activity_split_bill.dart';
-import 'controller_booking.dart';
-import 'controller_cancel_reason.dart';
 import 'controller_guest_dialog.dart';
 import 'controller_payment_dialog.dart';
 
@@ -156,6 +152,7 @@ class ActivityBooking extends StatelessWidget {
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(12),
+
                   child: SingleChildScrollView(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -259,7 +256,6 @@ class ActivityBooking extends StatelessWidget {
                           ], // End of button Row
                         ),
                         const SizedBox(height: 10),
-                        // SELECTED AMENITIES LIST
                         const Text(
                           "Amenities",
                           style: TextStyle(
@@ -587,7 +583,8 @@ class ActivityBooking extends StatelessWidget {
               ),
             ),
       ]  ),
-    ));
+    )
+      );
   }
 }
 

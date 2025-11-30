@@ -6,7 +6,6 @@ import '../../model/entity_user.dart';
 import '../../model/entity_booking.dart';
 import '../../service/service_object_box.dart';
 import '../../objectbox.g.dart';
-import '../../model/entity_cleaning_task.dart';
 
 import '../../enums/enum_room_status.dart';
 import '../../enums/enum_role.dart';

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hotel/util/snackbar_util.dart';
 import '../../../../model/entity_room.dart';
 import '../../../../objectbox.g.dart';
 import '../../../../service/service_object_box.dart';
@@ -95,12 +96,9 @@ class RoomChangeDialog extends StatelessWidget {
                         child: const Text("Select"),
                         onPressed: () {
                           if (reasonCtrl.text.trim().isEmpty) {
-                            Get.snackbar(
-                              "Reason Required",
-                              "Please enter reason to change room",
-                              backgroundColor: Colors.redAccent,
-                              colorText: Colors.white,
-                            );
+                            SnackbarUtil.showError(
+                              "Reason Required"
+                             " Please enter reason to change room");
                             return;
                           }
 

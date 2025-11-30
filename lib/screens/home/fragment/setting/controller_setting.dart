@@ -110,11 +110,6 @@ class ControllerSetting extends GetxController {
     // Save Reset Booking Type
     await box.write("resetBookingType", resetBookingType.value);
 
-    // Get.snackbar(
-    //   "Saved",
-    //   "Settings applied successfully",
-    //   snackPosition: SnackPosition.BOTTOM,
-    // );
   }
 
 }

@@ -305,7 +305,7 @@ class ControllerExpense extends GetxController {
         amount.text.trim().isEmpty ||
         selectedVendorForForm.value == null ||
         selectedCategoryForForm.value == null) {
-      Get.snackbar("Error", "All fields are required");
+      SnackbarUtil.showError("Error" "All fields are required", );
       return;
     }
 

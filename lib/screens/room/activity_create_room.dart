@@ -5,6 +5,7 @@ import 'package:hotel/screens/room/controller_create_room.dart';
 import 'package:hotel/screens/room/maintenance/controller_maintenanace.dart';
 import 'package:hotel/util/snackbar_util.dart';
 import '../../service/service_currency.dart';
+import '../../widgets/delete_dailog.dart';
 import '../../widgets/secondary_button.dart';
 
 class ActivityCreateRoom extends StatelessWidget {
@@ -248,11 +249,23 @@ class ActivityCreateRoom extends StatelessWidget {
                             child: IconButton(
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
-                              icon: const Icon(Icons.delete,
-                                  color: Colors.red, size: 20),
-                              onPressed: () =>
-                                  createCtrl.removeFacility(index),
+                              icon: const Icon(
+                                Icons.delete,
+                                color: Colors.red,
+                                size: 20,
+                              ),
+                              onPressed: () async {
+                                final confirmed = await showDeleteConfirmation(
+                                  title: "Facility",
+                                  message: "Do you want to delete this facility?",
+                                );
+
+                                if (confirmed) {
+                                  createCtrl.removeFacility(index);
+                                }
+                              },
                             ),
+
                           ),
                         ],
                       ),

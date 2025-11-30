@@ -5,6 +5,7 @@ import '../../model/entity_user.dart';
 import '../../model/entity_room.dart';
 import '../../model/entity_cleaning_task.dart';
 import '../../service/service_object_box.dart';
+import '../screens/booking/activity_booking.dart';
 import 'dialog_housekeeping.dart';
 import 'houskeeping_controller.dart';
 
@@ -78,14 +79,27 @@ class FragHomeHousekeeping extends StatelessWidget {
                       elevation: 2,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
-                      child: ListTile(
-                        title: Text("Room ${room.number}"),
-                        subtitle: Text(
-                          assigned
-                              ? "Assigned to: ${task.user.target?.first ?? task.user.target?.username}"
-                              : "Not Assigned",
-                        ),
-                      ),
+                      child:ListTile( onTap: () async {
+                      if (!assigned) {
+                        Get.snackbar("Info", "No cleaning task assigned to this room.");
+                        return;
+                      }
+
+                      final result = await Get.to(
+                              () => ActivityBooking(),
+                          arguments: {"mode": "cleaning", "room": room}
+                      );
+
+                      if (result == "done") {
+                        controller.markDone(task);
+                      }
+
+                      if (result == "reassign") {
+                        Get.dialog(DialogAssignCleaning());
+                      }
+                    },
+
+                    ),
                     );
                   }).toList(),
                 );
@@ -132,7 +146,7 @@ class FragHomeHousekeeping extends StatelessWidget {
       user.first,
       user.middle,
       user.last,
-    ].where((e) => e != null && e!.trim().isNotEmpty).join(" ");
+    ].where((e) => e != null && e.trim().isNotEmpty).join(" ");
 
     return Card(
       elevation: 2,

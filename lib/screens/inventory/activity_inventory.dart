@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hotel/util/snackbar_util.dart';
 import '../../model/entity_vendor.dart';
 import '../home/fragment/expenses/vendor/controller_vendor.dart';
 import '../home/fragment/inventory/controller_inventory.dart';
@@ -96,7 +97,7 @@ class InventoryForm {
 
       onConfirm: () {
         if (selectedVendor.value == null) {
-          Get.snackbar("Error", "Please select vendor");
+          SnackbarUtil.showError("Error" "Please select vendor");
           return;
         }
 

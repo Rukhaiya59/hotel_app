@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hotel/widgets/primary_button.dart';
 import '../../../../util/app_color.dart';
+import '../../../../widgets/delete_dailog.dart';
 import '../../../inventory/activity_inventory.dart';
 import '../expenses/vendor/controller_vendor.dart';
 import 'controller_inventory.dart';
@@ -80,8 +81,18 @@ class FragHomeInventory extends StatelessWidget {
                         ),
                         IconButton(
                           icon: Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => controller.deleteInventory(item.id),
-                        ),
+                          onPressed: () async {
+                            final confirmed = await showDeleteConfirmation(
+                              title: "Inventory Item",
+                              message: "Do you really want to delete this item?",
+                            );
+
+                            if (confirmed) {
+                              controller.deleteInventory(item.id);
+                            }
+                          },
+                        )
+
                       ],
                     ),
                   ),

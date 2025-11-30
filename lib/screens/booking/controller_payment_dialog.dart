@@ -114,6 +114,7 @@
 // }
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hotel/util/snackbar_util.dart';
 import 'package:mongo_dart/mongo_dart.dart' as mongo;
 import '../../model/entity_payment.dart';
 import '../../repository/repo_get_storage.dart';
@@ -206,9 +207,8 @@ class ControllerPaymentDialog extends GetxController {
                 /// AMOUNT VALIDATION
                 final double amount = double.tryParse(amtCtrl.text) ?? 0;
                 if (amount <= 0) {
-                  Get.snackbar("Invalid Amount", "Enter a valid payment amount",
-                      backgroundColor: Colors.red.shade300,
-                      colorText: Colors.white);
+                  SnackbarUtil.showError("Invalid Amount" "Enter a valid payment amount");
+
                   return;
                 }
 
@@ -218,12 +218,10 @@ class ControllerPaymentDialog extends GetxController {
 
                 if (mode != "Cash") {
                   if (txn.isEmpty) {
-                    Get.snackbar(
-                      "Transaction ID Required",
-                      "Please enter transaction ID",
-                      backgroundColor: Colors.red.shade300,
-                      colorText: Colors.white,
-                    );
+                    SnackbarUtil.showError(
+                      "Transaction ID Required"
+                      "Please enter transaction ID",);
+
                     return;
                   }
 
@@ -232,11 +230,10 @@ class ControllerPaymentDialog extends GetxController {
                     final upiRegex = RegExp(
                         r"^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$");
                     if (!upiRegex.hasMatch(txn)) {
-                      Get.snackbar(
-                        "Invalid UPI ID",
+                      SnackbarUtil.showError(
+                        "Invalid UPI ID"
                         "Enter correct UPI ID (example: myname@oksbi)",
-                        backgroundColor: Colors.red.shade300,
-                        colorText: Colors.white,
+
                       );
                       return;
                     }
@@ -246,11 +243,10 @@ class ControllerPaymentDialog extends GetxController {
                   if (mode == "Credit Card" || mode == "Debit Card") {
                     final cardRegex = RegExp(r"^[0-9]{4,6}$");
                     if (!cardRegex.hasMatch(txn)) {
-                      Get.snackbar(
-                        "Invalid Card Reference",
+                      SnackbarUtil.showError(
+                        "Invalid Card Reference"
                         "Enter last 4–6 digits only",
-                        backgroundColor: Colors.red.shade300,
-                        colorText: Colors.white,
+
                       );
                       return;
                     }
@@ -260,11 +256,10 @@ class ControllerPaymentDialog extends GetxController {
                   if (mode == "Net Banking") {
                     final netRegex = RegExp(r"^[A-Z0-9]{8,20}$");
                     if (!netRegex.hasMatch(txn.toUpperCase())) {
-                      Get.snackbar(
-                        "Invalid Bank Transaction ID",
+                      SnackbarUtil.showError(
+                        "Invalid Bank Transaction ID"
                         "Use 8–20 alphanumeric characters",
-                        backgroundColor: Colors.red.shade300,
-                        colorText: Colors.white,
+
                       );
                       return;
                     }
@@ -275,11 +270,9 @@ class ControllerPaymentDialog extends GetxController {
                     final walletRegex =
                     RegExp(r"^[A-Za-z0-9]{6,20}$"); // simple reference
                     if (!walletRegex.hasMatch(txn)) {
-                      Get.snackbar(
-                        "Invalid Wallet Ref",
+                      SnackbarUtil.showError(
+                        "Invalid Wallet Ref"
                         "Wallet Ref ID must be 6–20 characters",
-                        backgroundColor: Colors.red.shade300,
-                        colorText: Colors.white,
                       );
                       return;
                     }

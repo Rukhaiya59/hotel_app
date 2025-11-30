@@ -133,28 +133,28 @@ class AddExpensePopup extends StatelessWidget {
               const SizedBox(height: 15),
 
               // Date Picker
-              Obx(() {
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("Date: ${ctrl.selectedDate.value.toString().split(' ')[0]}"),
-                    ElevatedButton(
-                      onPressed: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                          initialDate: ctrl.selectedDate.value,
-                        );
-                        if (picked != null) {
-                          ctrl.selectedDate.value = picked;
-                        }
-                      },
-                      child: Text("Pick"),
-                    )
-                  ],
-                );
-              }),
+              // Obx(() {
+              //   return Row(
+              //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //     children: [
+              //       Text("Date: ${ctrl.selectedDate.value.toString().split(' ')[0]}"),
+              //       ElevatedButton(
+              //         onPressed: () async {
+              //           final picked = await showDatePicker(
+              //             context: context,
+              //             firstDate: DateTime(2000),
+              //             lastDate: DateTime(2100),
+              //             initialDate: ctrl.selectedDate.value,
+              //           );
+              //           if (picked != null) {
+              //             ctrl.selectedDate.value = picked;
+              //           }
+              //         },
+              //         child: Text("Pick"),
+              //       )
+              //     ],
+              //   );
+              // }),
               Obx(() {
                 return GestureDetector(
                   onTap: () async {

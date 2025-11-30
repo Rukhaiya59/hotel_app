@@ -34,7 +34,7 @@ class VendorController extends GetxController {
   // ADD VENDOR + ADD CATEGORY
   void addVendor() {
     if (name.text.trim().isEmpty) {
-      Get.snackbar("Error", "Vendor name is required");
+      SnackbarUtil.showError("Error" "Vendor name is required");
       return;
     }
 

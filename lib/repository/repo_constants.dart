@@ -21,15 +21,9 @@ class RepoConstants {
           title: EnumDrawerMenu.user.value.tr,
         ),
         ModelIconString(
-            icon: Icons.room,
+            icon: Icons.meeting_room
+            ,
             title: EnumDrawerMenu.room.value.tr),
-        // ModelIconString(
-        //   icon: Icons.build,
-        //   title: EnumDrawerMenu.maintenance.value.tr,
-        // ),
-        // ModelIconString(
-        //     icon: Icons.receipt_long,
-        //     title: EnumDrawerMenu.tax.value.tr),
         ModelIconString(
           icon: Icons.local_offer,
           title: EnumDrawerMenu.discount.value.tr,
@@ -40,31 +34,31 @@ class RepoConstants {
         ),
 
         ModelIconString(
-            icon: Icons.report,
+            icon:Icons.assessment,
             title: EnumDrawerMenu.report.value.tr),
         ModelIconString(
-          icon: Icons.inventory,
+          icon: Icons.inventory_2,
           title: EnumDrawerMenu.inventory.value.tr,
         ),
         ModelIconString(
-          icon: Icons.list_alt,
+          icon:Icons.fact_check,
           title: EnumDrawerMenu.booking.value.tr,
         ),
         ModelIconString(
-          icon: Icons.event_available_sharp,
+          icon: Icons.event_available,
           title: EnumDrawerMenu.reservation.value.tr,
         ),
         ModelIconString(
-          icon: Icons.add_task,
-          title: EnumDrawerMenu.housekeeping.value.tr,
+          icon: Icons.cleaning_services,
+          title: EnumDrawerMenu.cleanOps.value.tr,
         ),
 
         ModelIconString(
-          icon: Icons.room_outlined,
-          title: EnumDrawerMenu.bookingHistory.value.tr,
+          icon: Icons.receipt_long,
+          title: EnumDrawerMenu.hotelLogs.value.tr,
         ),
         ModelIconString(
-          icon: Icons.person,
+          icon:Icons.recent_actors,
           title: EnumDrawerMenu.guest.value.tr,
         ),
 
@@ -87,12 +81,12 @@ class RepoConstants {
         ),
         ModelIconString(
           icon: Icons.add_task,
-          title: EnumDrawerMenu.housekeeping.value.tr,
+          title: EnumDrawerMenu.cleanOps.value.tr,
         ),
 
         ModelIconString(
-          icon: Icons.room_outlined,
-          title: EnumDrawerMenu.bookingHistory.value.tr,
+          icon: Icons.receipt_long,
+          title: EnumDrawerMenu.hotelLogs.value.tr,
         ),
         ModelIconString(
           icon: Icons.person,
@@ -121,18 +115,6 @@ class RepoConstants {
 
     if (strUserRole == EnumRole.manager.value) {
       List<ModelIconString> listOwner = [
-        // ModelIconString(
-        //   icon: Icons.dashboard,
-        //   title: EnumDrawerMenu.dashboard.value.tr,
-        // ),
-    // ModelIconString(
-    // icon: Icons.task,
-    // title: EnumDrawerMenu.task.value.tr,
-    // ),
-    //     ModelIconString(
-    //       icon: Icons.find_in_page,
-    //       title: EnumDrawerMenu.lostFound.value.tr,
-    //     ),
         ModelIconString(
           icon: Icons.inventory,
           title: EnumDrawerMenu.inventory.value.tr,

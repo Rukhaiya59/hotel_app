@@ -131,7 +131,7 @@ class ControllerMaintenanceDialog extends GetxController {
               if (reasonCtrl.text.isEmpty ||
                   startDate == null ||
                   endDate == null) {
-                Get.snackbar("Error", "Please fill all required fields");
+                SnackbarUtil.showError("Error" "Please fill all required fields");
                 return;
               }
 

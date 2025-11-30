@@ -4,7 +4,6 @@ import 'package:hotel/commons/loader.dart';
 import 'package:hotel/enums/enum_drawer_menu.dart';
 import 'package:hotel/model/model_icon_string.dart';
 import 'package:hotel/screens/home/histoy/activity_all_history.dart';
-import 'package:hotel/screens/home/histoy/frag_home_cleaning.dart';
 import 'package:hotel/screens/home/fragment/expenses/frag_home_expense_dashboard.dart';
 import 'package:hotel/screens/home/fragment/guest/frag_home_guest.dart';
 import 'package:hotel/screens/home/fragment/reservation/frag_home_reservation.dart';
@@ -18,12 +17,10 @@ import '../../util/static_method.dart';
 import '../../widgets/primary_button.dart';
 import 'controller_home.dart';
 import 'fragment/booking/frag_home_booking.dart';
-import 'fragment/booking_history/Frag_booking_history.dart';
 import 'fragment/dashboard/frag_home_dashboard.dart';
 import 'fragment/disscount/activity_add_disscount.dart';
 import 'fragment/disscount/frag_home_discount.dart';
 import 'fragment/inventory/frag_home_inventory.dart';
-import 'fragment/maintenance/activity_maintenance_history.dart';
 import 'fragment/user/controller_user.dart';
 
 class ActivityHome extends StatelessWidget {
@@ -39,32 +36,19 @@ class ActivityHome extends StatelessWidget {
           Expanded(
             flex: 1,
             child: Container(
-              // decoration: BoxDecoration(
-              //   gradient: AppTheme.gradient(
-              //     isDark: Theme.of(context).brightness == Brightness.dark,
-              //   ),
-              // ),
               color: Colors.black26,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 25),
+                  const SizedBox(height: 5),
                   Center(
-                    child: Text(
-                      "HMS",
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white, // White text like settings screen
-                      ),
+                    child: Image.asset(
+                      "assets/images/rh.png",
+                      width: 120,     // adjust size as needed
+                      height: 120,
+                      fit: BoxFit.contain,
                     ),
                   ),
-
-                  const SizedBox(height: 15),
-                  Divider(
-                    color: Colors.white24, // subtle divider
-                  ),
-
                   // Container(
                   //   padding: const EdgeInsets.all(20),
                   //   decoration: BoxDecoration(
@@ -167,7 +151,7 @@ class ActivityHome extends StatelessWidget {
                 return FragHomeBooking();
               }
               if (controller.rxSelectedDrawer.value.title ==
-                  EnumDrawerMenu.bookingHistory.value.tr) {
+                  EnumDrawerMenu.hotelLogs.value.tr) {
                 return ActivityAllHistory();
               }
               if (controller.rxSelectedDrawer.value.title ==
@@ -193,7 +177,7 @@ class ActivityHome extends StatelessWidget {
                 return ActivityExpenseDashboard();
               }
               if (controller.rxSelectedDrawer.value.title ==
-                  EnumDrawerMenu.housekeeping.value.tr) {
+                  EnumDrawerMenu.cleanOps.value.tr) {
                 return FragHomeHousekeeping();
               }
               return const SizedBox();
