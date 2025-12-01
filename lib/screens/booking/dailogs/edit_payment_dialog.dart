@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import '../../../model/entity_payment.dart';
 import '../../../service/service_currency.dart';
+import '../../../service/service_object_box.dart';
 import '../controller_booking.dart';
 
 void showEditPaymentDialog(EntityPayment payment) {
   final currencyService = Get.find<ServiceCurrency>();
   final bookingCtrl=Get.put(ControllerBooking(initialRoom: Get.arguments));
-
-
+  final boxPayment = Get.find<ServiceObjectBox>()
+      .store
+      .box<EntityPayment>();
   final amtCtrl = TextEditingController(text: payment.amount.toString());
   final txnCtrl = TextEditingController(text: payment.transactionId);
   final RxString selectedMode = payment.paymentMode.obs;
-
   final List<String> paymentModes = [
     'Cash',
     'Credit Card',
@@ -85,11 +85,16 @@ void showEditPaymentDialog(EntityPayment payment) {
               payment.transactionId = txnCtrl.text;
               payment.amount = double.tryParse(amtCtrl.text) ?? 0;
 
-              bookingCtrl. rxListPayment.refresh(); // 🔥 update UI instantly
+              //  DATABASE SAVE (VERY IMPORTANT)
+              boxPayment.put(payment);
+
+              //  UI REFRESH
+              bookingCtrl.rxListPayment.refresh();
               bookingCtrl.updateTotal();
 
               Get.back();
             },
+
             child: const Text("Save"),
           ),
         ],

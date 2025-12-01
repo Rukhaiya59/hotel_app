@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../model/entity_guest.dart';
+import 'controller_split_bill.dart';
+import 'controller_split_percent.dart';
 
-class SplitPercentScreen extends StatefulWidget {
+class SplitPercentScreen extends StatelessWidget {
   final double totalAmount;
   final List<EntityGuest> guests;
 
@@ -13,72 +15,124 @@ class SplitPercentScreen extends StatefulWidget {
   });
 
   @override
-  State<SplitPercentScreen> createState() => _SplitPercentScreenState();
-}
-
-class _SplitPercentScreenState extends State<SplitPercentScreen> {
-  final Map<String, TextEditingController> ctrls = {};
-
-  @override
-  void initState() {
-    super.initState();
-    for (var g in widget.guests) {
-      ctrls[g.guestUuid!] = TextEditingController();
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final ControllerSplitPercent controller =
+    Get.put(ControllerSplitPercent(
+      totalAmount: totalAmount,
+      guests: guests,
+    )
+
+    );
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Split By %")),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            Text("Total: ₹${widget.totalAmount}"),
+            Text("Total: ₹$totalAmount"),
 
             const SizedBox(height: 10),
 
             Expanded(
               child: ListView(
-                children: widget.guests.map((g) {
+                children: guests.map((g) {
+                  final mode = controller
+                      .paymentModes[g.guestUuid!]!;
+
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: TextField(
-                      controller: ctrls[g.guestUuid]!,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: "${g.first} ${g.last} %",
-                        border: const OutlineInputBorder(),
-                      ),
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "${g.first} ${g.last}",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: controller.percentCtrls[g.guestUuid]!,
+                                onChanged: (v) {
+                                  controller.updatePercent(g.guestUuid!, v); // ✅ FIX
+                                },
+
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  labelText: "%",
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(width: 8),
+
+                            Expanded(
+                              child: Obx(
+                                    () => DropdownButtonFormField<String>(
+                                  value: mode.value,
+                                  decoration: const InputDecoration(
+                                    labelText: "Mode",
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(
+                                      value: "Cash",
+                                      child: Text("Cash"),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: "UPI",
+                                      child: Text("UPI"),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: "Card",
+                                      child: Text("Card"),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: "Company",
+                                      child: Text("Company"),
+                                    ),
+                                  ],
+                                  onChanged: (v) =>
+                                  mode.value = v!,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        Obx(
+                              () => Text(
+                            "Amount: ₹${controller.guestAmounts[g.guestUuid!]!.value.toStringAsFixed(2)}",
+                          ),
+                        ),
+
+
+                        const SizedBox(height: 6),
+
+                        TextField(
+                          controller:
+                          controller.txnCtrls[g.guestUuid]!,
+                          decoration: const InputDecoration(
+                            labelText:
+                            "Transaction ID (optional for Cash)",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 }).toList(),
               ),
             ),
 
-            ElevatedButton(
-              onPressed: () {
-                final List<Map<String, dynamic>> results = [];
-
-                ctrls.forEach((key, ctrl) {
-                  double percent = double.tryParse(ctrl.text) ?? 0;
-                  if (percent > 0) {
-                    double amount =
-                        (widget.totalAmount * percent) / 100.0;
-
-                    results.add({
-                      "guestUuid": key,
-                      "percent": percent,
-                      "amount": amount,
-                    });
-                  }
-                });
-
-                Get.back(result: results);
-              },
-              child: const Text("Apply Split"),
-            ),
           ],
         ),
       ),

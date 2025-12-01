@@ -9,7 +9,6 @@ class ControllerCancelReason extends GetxController {
     reasonCtrl.dispose();
     super.onClose();
   }
-
   Future<String?> showCancelReasonDialog(BuildContext context) async {
     reasonCtrl.clear();
 

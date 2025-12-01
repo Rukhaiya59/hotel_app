@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import '../../../model/entity_amenities.dart';
 import '../../../service/service_currency.dart';
+import '../../../service/service_object_box.dart';
 import '../controller_booking.dart';
 
 void showEditSelectedAmenityDialog(EntityAmenities amenity) {
@@ -13,6 +13,10 @@ void showEditSelectedAmenityDialog(EntityAmenities amenity) {
 
   final currencyService = Get.find<ServiceCurrency>();
   final bookingCtrl=Get.put(ControllerBooking(initialRoom: Get.arguments));
+  final boxAmenities = Get.find<ServiceObjectBox>()
+      .store
+      .box<EntityAmenities>();
+
 
   Get.dialog(
     Material(
@@ -60,12 +64,16 @@ void showEditSelectedAmenityDialog(EntityAmenities amenity) {
               amenity.qty = int.tryParse(qtyCtrl.text) ?? 1;
               amenity.description = descCtrl.text.trim();
 
-              // refresh UI
-              bookingCtrl.rxListAmenities.refresh();   // ✅ UI Refresh
-              bookingCtrl.updateTotal();               // ✅ Total Update
+              // ✅ DATABASE SAVE (VERY IMPORTANT)
+              boxAmenities.put(amenity);
+
+              // ✅ UI REFRESH
+              bookingCtrl.rxListAmenities.refresh();
+              bookingCtrl.updateTotal();
 
               Get.back();
             },
+
             child: const Text("Save"),
           ),
         ],

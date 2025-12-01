@@ -4,7 +4,6 @@ import 'package:hotel/commons/loader.dart';
 import 'package:hotel/enums/enum_drawer_menu.dart';
 import 'package:hotel/model/model_icon_string.dart';
 import 'package:hotel/screens/home/histoy/activity_all_history.dart';
-import 'package:hotel/screens/home/histoy/frag_home_cleaning.dart';
 import 'package:hotel/screens/home/fragment/expenses/frag_home_expense_dashboard.dart';
 import 'package:hotel/screens/home/fragment/guest/frag_home_guest.dart';
 import 'package:hotel/screens/home/fragment/reservation/frag_home_reservation.dart';
@@ -18,12 +17,10 @@ import '../../util/static_method.dart';
 import '../../widgets/primary_button.dart';
 import 'controller_home.dart';
 import 'fragment/booking/frag_home_booking.dart';
-import 'fragment/booking_history/Frag_booking_history.dart';
 import 'fragment/dashboard/frag_home_dashboard.dart';
 import 'fragment/disscount/activity_add_disscount.dart';
 import 'fragment/disscount/frag_home_discount.dart';
 import 'fragment/inventory/frag_home_inventory.dart';
-import 'fragment/maintenance/activity_maintenance_history.dart';
 import 'fragment/user/controller_user.dart';
 
 class ActivityHome extends StatelessWidget {
@@ -37,7 +34,7 @@ class ActivityHome extends StatelessWidget {
       body: Row(
         children: [
           Expanded(
-            flex: 1,
+            flex: 15,
             child: Container(
               // decoration: BoxDecoration(
               //   gradient: AppTheme.gradient(
@@ -118,7 +115,7 @@ class ActivityHome extends StatelessWidget {
           ),
 
           Expanded(
-            flex: 8,
+            flex: 85,
             child: Obx(() {
               debugPrint(
                 "rxSelectedDrawer: called: title: ${controller.rxSelectedDrawer

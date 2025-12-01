@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../model/entity_user.dart';
 import '../../model/entity_room.dart';
+import '../enums/enum_cleaning_type.dart';
 import 'houskeeping_controller.dart';
 
 class DialogAssignCleaning extends StatelessWidget {
@@ -14,7 +15,8 @@ class DialogAssignCleaning extends StatelessWidget {
   Widget build(BuildContext context) {
     final selectedStaff = Rxn<EntityUser>();
     final selectedRoom = Rxn<EntityRoom>();
-    final selectedType = "checkout".obs;
+    final selectedType = CleaningType.checkout.obs;
+
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -74,25 +76,34 @@ class DialogAssignCleaning extends StatelessWidget {
                 const SizedBox(height: 15),
 
                 // CLEANING TYPE
-                DropdownButtonFormField<String>(
+                DropdownButtonFormField<CleaningType>(
                   value: selectedType.value,
                   decoration: const InputDecoration(
                     labelText: "Cleaning Type",
                     border: OutlineInputBorder(),
                   ),
-                  items: const [
-                    DropdownMenuItem(
-                        value: "checkout",
-                        child: Text("Checkout Cleaning")),
-                    DropdownMenuItem(
-                        value: "stayover",
-                        child: Text("Stayover Cleaning")),
-                    DropdownMenuItem(
-                        value: "manual",
-                        child: Text("Manual Cleaning")),
-                  ],
+                  items: CleaningType.values.map((type) {
+                    String label;
+                    switch (type) {
+                      case CleaningType.checkout:
+                        label = "Checkout Cleaning";
+                        break;
+                      case CleaningType.stayover:
+                        label = "Stayover Cleaning";
+                        break;
+                      case CleaningType.manual:
+                        label = "Manual Cleaning";
+                        break;
+                    }
+
+                    return DropdownMenuItem<CleaningType>(
+                      value: type,
+                      child: Text(label),
+                    );
+                  }).toList(),
                   onChanged: (val) => selectedType.value = val!,
                 ),
+
               ],
             ),
           ),
@@ -120,8 +131,9 @@ class DialogAssignCleaning extends StatelessWidget {
             controller.assignTask(
               staff: selectedStaff.value!,
               room: selectedRoom.value!,
-              type: selectedType.value,
+              type: selectedType.value,   // ✅ CleaningType ENUM
             );
+
 
             Get.back();
           },

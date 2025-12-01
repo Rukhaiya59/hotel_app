@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hotel/houskeeping/activity_cleaning_detail.dart';
 
 import '../../../../enums/enum_room_status.dart';
 import '../../../../widgets/text_bold.dart';
@@ -44,6 +45,11 @@ class FragHomeBooking extends StatelessWidget {
                     Get.to(() => ActivityMaintenanceViewOnly(roomUuid: room.roomUuid!));
                     return;
                   }
+                  if (room.status == EnumRoomStatus.cleaning.name) {
+                    Get.to(() => ActivityCleaningDetail(roomUuid: room.roomUuid!));
+                    return;
+                  }
+
                   await Get.to(() => ActivityBooking(), arguments: room);
                   controller.fetchRooms();
                 },

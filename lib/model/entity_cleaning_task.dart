@@ -14,8 +14,8 @@ class EntityCleaningTask {
   /// stayover | checkout | manual
   String type;
 
-  DateTime createdAt;
-  DateTime? completedAt;
+  String createdAt;
+  String? completedAt;
 
   /// Room linked with this cleaning task
   final room = ToOne<EntityRoom>();
@@ -30,6 +30,6 @@ class EntityCleaningTask {
     this.id = 0,
     this.status = "pending",
     this.type = "stayover",
-    DateTime? createdAt,
-  }) : createdAt = createdAt ?? DateTime.now();
+    String? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now().toIso8601String();
 }

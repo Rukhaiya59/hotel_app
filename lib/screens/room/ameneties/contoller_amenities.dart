@@ -245,6 +245,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:objectbox/objectbox.dart';
+
 import '../../../model/entity_amenities.dart';
 import '../../../service/service_currency.dart';
 import '../../../service/service_object_box.dart';
@@ -276,7 +277,9 @@ class ControllerAmenities extends GetxController {
     List<EntityAmenities>? preSelected,
   }) async {
     final RxList<Map<String, dynamic>> selected = <Map<String, dynamic>>[].obs;
+
     final RxString searchQuery = ''.obs;
+
     if (preSelected != null) {
       for (var a in preSelected) {
         selected.add({'amenity': a, 'count': (a.qty ?? 1).obs});
@@ -312,17 +315,17 @@ class ControllerAmenities extends GetxController {
                 ),
                 const SizedBox(height: 10),
 
-                // 🧾 Amenity List
+                // Amenity List
                 Expanded(
                   child: Obx(() {
                     final filteredList = allAmenities
                         .where(
                           (a) =>
-                      a.name?.toLowerCase().contains(
-                        searchQuery.value.toLowerCase(),
-                      ) ??
-                          false,
-                    )
+                              a.name?.toLowerCase().contains(
+                                searchQuery.value.toLowerCase(),
+                              ) ??
+                              false,
+                        )
                         .toList();
 
                     return ListView.builder(
@@ -331,8 +334,8 @@ class ControllerAmenities extends GetxController {
                         final amenity = filteredList[index];
                         return Obx(() {
                           final int existingIndex = selected.indexWhere(
-                                (item) =>
-                            item['amenity'].amenitiesId ==
+                            (item) =>
+                                item['amenity'].amenitiesId ==
                                 amenity.amenitiesId,
                           );
 
@@ -352,14 +355,12 @@ class ControllerAmenities extends GetxController {
                                       'amenity': amenity,
                                       'count': 1.obs,
                                     });
-                                    selected
-                                        .refresh(); // 🔥 force UI update
+                                    selected.refresh(); // 🔥 force UI update
                                   }
                                 } else {
                                   if (isSelected) {
                                     selected.removeAt(existingIndex);
-                                    selected
-                                        .refresh(); // 🔥 force UI update
+                                    selected.refresh(); // 🔥 force UI update
                                   }
                                 }
                               },
@@ -373,8 +374,10 @@ class ControllerAmenities extends GetxController {
                               children: [
                                 if (isSelected) ...[
                                   IconButton(
-                                    icon: const Icon(Icons.remove_circle,
-                                        color: Colors.red),
+                                    icon: const Icon(
+                                      Icons.remove_circle,
+                                      color: Colors.red,
+                                    ),
                                     onPressed: () {
                                       if (count.value > 1) {
                                         count.value--;
@@ -388,11 +391,14 @@ class ControllerAmenities extends GetxController {
                                   Text(
                                     count.value.toString(),
                                     style: const TextStyle(
-                                        fontWeight: FontWeight.bold),
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.add_circle,
-                                        color: Colors.green),
+                                    icon: const Icon(
+                                      Icons.add_circle,
+                                      color: Colors.green,
+                                    ),
                                     onPressed: () {
                                       count.value++;
                                       selected
@@ -401,11 +407,15 @@ class ControllerAmenities extends GetxController {
                                   ),
                                 ],
                                 IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.red,
+                                  ),
                                   onPressed: () async {
                                     final confirm = await showDeleteConfirmation(
                                       title: amenity.name ?? "Amenity",
-                                      message: "Do you want to delete ${amenity.name}?",
+                                      message:
+                                          "Do you want to delete ${amenity.name}?",
                                     );
                                     if (confirm) {
                                       boxAmenities.remove(amenity.amenitiesId);
@@ -474,7 +484,8 @@ class ControllerAmenities extends GetxController {
                 controller: priceCtrl,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: "Price (${Get.find<ServiceCurrency>().symbol})",//currency
+                  labelText:
+                      "Price (${Get.find<ServiceCurrency>().symbol})", //currency
                 ),
               ),
               const SizedBox(height: 10),

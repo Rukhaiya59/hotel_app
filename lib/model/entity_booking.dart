@@ -10,7 +10,7 @@ import 'entity_room.dart';
 class EntityBooking {
   @Id()
   int id = 0;
-  int bookingId;  // ObjectBox primary key
+  int bookingId; // ObjectBox primary key
 
   String bookingUuid;
   double totalBill;
@@ -20,7 +20,6 @@ class EntityBooking {
   // ✅ TAX (ADDED)
   double? taxAmount;
   String? taxDescription;
-
 
   // New fields
   String hotelUuid;
@@ -37,7 +36,6 @@ class EntityBooking {
   String? cancelReason;
   String? actualCheckInAt;
   String? actualCheckOutAt;
-
   bool reminderTMinus1Sent;
   bool reminderOnDaySent;
 
@@ -66,73 +64,75 @@ class EntityBooking {
     this.reminderTMinus1Sent = false,
     this.reminderOnDaySent = false,
   }) : cleaningTime = DateTime.now().toString(),
-        cleaningTaskCreated = false;
+       cleaningTaskCreated = false;
 
   // fromJson
-  factory EntityBooking.fromJson(Map<String, dynamic> json) {
-    return EntityBooking(
-      bookingId: json['bookingId'] ?? 0,
-      bookingUuid: json['bookingUuid'],
-      totalBill: json['totalBill'],
-      discountPrice: json['discountPrice'],
-      discountDesc: json['discountDesc'],
-      hotelUuid: json['hotelUuid'],
-      checkInDate: json['checkInDate'],
-      checkOutDate: json['checkOutDate'],
-      bookingType: json['bookingType'] ?? 'Walk-in',
-      status: json['status'] ?? 'Confirmed',
-      notes: json['notes'],
-
-    );
-    // Note: ToMany and ToOne relations are not handled in this basic fromJson.
-    // They are typically populated after the object is created and put into the ObjectBox store.
-  }
+  factory EntityBooking.fromJson(Map<String, dynamic> json) =>
+      EntityBooking(
+          id: json['id'] ?? 0,
+          bookingId: json['bookingId'] ?? 0,
+          bookingUuid: json['bookingUuid'],
+          totalBill: (json['totalBill'] as num).toDouble(),
+          discountPrice: (json['discountPrice'] as num?)?.toDouble(),
+          discountDesc: json['discountDesc'],
+          taxAmount: (json['taxAmount'] as num?)?.toDouble(),
+          taxDescription: json['taxDescription'],
+          hotelUuid: json['hotelUuid'],
+          checkInDate: json['checkInDate'],
+          checkOutDate: json['checkOutDate'],
+          bookingType: json['bookingType'] ?? 'Walk-in',
+          status: json['status'] ?? 'Confirmed',
+          notes: json['notes'],
+          reminderTMinus1Sent: json['reminderTMinus1Sent'] ?? false,
+          reminderOnDaySent: json['reminderOnDaySent'] ?? false,
+        )
+        ..cleaningTime = json['cleaningTime'] ?? DateTime.now().toString()
+        ..cleaningTaskCreated = json['cleaningTaskCreated'] ?? false
+        ..cancelledAt = json['cancelledAt']
+        ..cancelReason = json['cancelReason']
+        ..actualCheckInAt = json['actualCheckInAt']
+        ..actualCheckOutAt = json['actualCheckOutAt'];
+  // Note: ToMany and ToOne relations are not handled in this fromJson.
+  // They are typically populated after the object is created and put into the ObjectBox store.
+  // For example, by linking them using their IDs from the JSON.
 
   // toMap
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'bookingId': bookingId,
       'bookingUuid': bookingUuid,
       'totalBill': totalBill,
       'discountPrice': discountPrice,
       'discountDesc': discountDesc,
+      'taxAmount': taxAmount,
+      'taxDescription': taxDescription,
       'hotelUuid': hotelUuid,
       'checkInDate': checkInDate,
       'checkOutDate': checkOutDate,
       'bookingType': bookingType,
       'status': status,
       'notes': notes,
-      // Note: ToMany and ToOne relations are not serialized to JSON directly.
-      // ✅ TAX
-      'taxAmount': taxAmount,
-      'taxDescription': taxDescription,
-
-      'actualCheckInAt': actualCheckInAt,
-      'actualCheckOutAt': actualCheckOutAt,
-      'reminderTMinus1Sent': reminderTMinus1Sent,
-      'reminderOnDaySent': reminderOnDaySent,
-
-      // You would typically serialize their IDs or UUIDs if needed.
-      // For example:
-      // 'guestIds': guest.map((g) => g.guestId).toList(),
-      // 'roomId': room.target?.roomId,
       'cleaningTime': cleaningTime,
       'cleaningTaskCreated': cleaningTaskCreated,
       'cancelledAt': cancelledAt,
       'cancelReason': cancelReason,
-      'room': room.target?.toMap(),
-      // Assuming EntityRoom has a toMap/toJson method
-      'guests': guest.map((g) => g.toMap()).toList(),
-      // Assuming EntityGuest has a toMap/toJson method
-      'amenities': amenities.map((a) => a.toMap()).toList(),
-      // Assuming EntityAmenities has a toMap/toJson method
-      'payments': payment.map((p) => p.toMap()).toList(),
-      // Assuming EntityPayment has a toMap/toJson method
+      'actualCheckInAt': actualCheckInAt,
+      'actualCheckOutAt': actualCheckOutAt,
+      'reminderTMinus1Sent': reminderTMinus1Sent,
+      'reminderOnDaySent': reminderOnDaySent,
+      // Note: Relations are not serialized directly.
+      // You would typically serialize their IDs/UUIDs or a nested map.
+      'room': room.target?.toMap(), // Assumes EntityRoom has toMap()
+      'guests': guest
+          .map((g) => g.toMap())
+          .toList(), // Assumes EntityGuest has toMap()
+      'amenities': amenities
+          .map((a) => a.toMap())
+          .toList(), // Assumes EntityAmenities has toMap()
+      'payments': payment
+          .map((p) => p.toMap())
+          .toList(), // Assumes EntityPayment has toMap()
     };
   }
 }
-
-
-
-
-

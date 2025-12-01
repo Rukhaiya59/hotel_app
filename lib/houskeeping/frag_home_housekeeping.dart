@@ -83,8 +83,11 @@ class FragHomeHousekeeping extends StatelessWidget {
                         subtitle: Text(
                           assigned
                               ? "Assigned to: ${task.user.target?.first ?? task.user.target?.username}"
-                              : "Not Assigned",
+                              : (task.type == "stayover"
+                              ? "Stayover Cleaning (Scheduled)"
+                              : "Not Assigned"),
                         ),
+
                       ),
                     );
                   }).toList(),

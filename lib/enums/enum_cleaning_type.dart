@@ -1,1 +1,1 @@
-enum CleaningType { stayover, checkout }
+enum CleaningType { stayover, checkout,manual }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:hotel/screens/booking/dailogs/edit_amenity_dailog.dart';
 import 'package:hotel/screens/booking/print/booking_print_overview.dart';
@@ -7,20 +6,17 @@ import 'package:hotel/util/app_color.dart';
 import 'package:hotel/util/snackbar_util.dart';
 import 'package:hotel/widgets/primary_button.dart';
 import 'package:hotel/widgets/text_header.dart';
-import 'package:path/path.dart';
 import '../../enums/enum_room_status.dart';
 import '../../model/entity_booking.dart';
 import '../../model/entity_room.dart';
 import '../../service/service_currency.dart';
 import '../room/ameneties/contoller_amenities.dart';
 import 'controller_booking.dart';
+import 'controller_guest_dialog.dart';
+import 'controller_payment_dialog.dart';
 import 'dailogs/dailog_discount_show.dart';
 import 'dailogs/edit_payment_dialog.dart';
 import 'split_bill/activity_split_bill.dart';
-import 'controller_booking.dart';
-import 'controller_cancel_reason.dart';
-import 'controller_guest_dialog.dart';
-import 'controller_payment_dialog.dart';
 
 class ActivityBooking extends StatelessWidget {
   final EntityBooking? editBooking;
@@ -33,19 +29,18 @@ class ActivityBooking extends StatelessWidget {
     final ControllerBooking controller = Get.put(
       ControllerBooking(initialRoom: room),
     );
+
     final ControllerGuestDialog guestDialog = Get.put(ControllerGuestDialog());
-    final ControllerPaymentDialog paymentDialog = Get.put(
-      ControllerPaymentDialog(),
-    );
+    final ControllerPaymentDialog paymentDialog = Get.put(ControllerPaymentDialog(),);
+
     final ControllerAmenities controllerAmenities = Get.put(
       ControllerAmenities(),
     );
+
     // final ControllerCancelReason cancelReasonCtrl = Get.put(
     //   ControllerCancelReason(),
     // );
-
     final currencyService = Get.find<ServiceCurrency>();
-
     if (editBooking != null) {
       controller.loadExistingReservation(editBooking!);
     }
@@ -252,7 +247,11 @@ class ActivityBooking extends StatelessWidget {
                                     .showAmenitiesDialog(
                                       preSelected: controller.rxListAmenities,
                                     );
-                                controller.rxListAmenities.assignAll(selected);
+                                var list = selected
+                                    .map((g) => g.toMap())
+                                    .toList();
+                                Get.log(list.toString());
+                                controller.rxListAmenities.value = selected;
                                 controller.updateTotal();
                               },
                             ),
@@ -272,42 +271,49 @@ class ActivityBooking extends StatelessWidget {
                           if (controller.rxListAmenities.isEmpty) {
                             return const Text("No amenities selected");
                           }
-                          double totalAmenityCost =
-                              controller.rxListAmenities.fold(
-                            0.0,
-                            (sum, item) =>
-                                sum + ((item.price ?? 0) * (item.qty ?? 1)),
-                          );
+                          double totalAmenityCost = controller.rxListAmenities
+                              .fold(
+                                0.0,
+                                (sum, item) =>
+                                    sum + ((item.price ?? 0) * (item.qty ?? 1)),
+                              );
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               ...controller.rxListAmenities.map(
                                 (a) => ListTile(
-                              dense: true,
-                              contentPadding: EdgeInsets.zero,
-                              title: Text(a.name ?? "Unnamed Amenity"),
-                              subtitle: Text(
-                                "${currencyService.symbol}${a.price?.toStringAsFixed(2) ?? '0.00'} × ${a.qty ?? 1}",
-                              ),
+                                  dense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(a.name ?? "Unnamed Amenity"),
+                                  subtitle: Text(
+                                    "${currencyService.symbol}${a.price?.toStringAsFixed(2) ?? '0.00'} × ${a.qty ?? 1}",
+                                  ),
 
-                              trailing: Row( // <-- Start of trailing Row
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit, color: Colors.blue),
-                                    onPressed: () {
-                                      showEditSelectedAmenityDialog(a);
-                                    },
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete, color: Colors.red),
-                                    onPressed: () {
-                                      controller.rxListAmenities.remove(a);
-                                      controller.updateTotal();
-                                    },
-                                  ),
-                                 ], // <-- End of children for trailing Row
-                               ), // <-- End of trailing Row
+                                  trailing: Row(
+                                    // <-- Start of trailing Row
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.edit,
+                                          color: Colors.blue,
+                                        ),
+                                        onPressed: () {
+                                          showEditSelectedAmenityDialog(a);
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.delete,
+                                          color: Colors.red,
+                                        ),
+                                        onPressed: () {
+                                          controller.rxListAmenities.remove(a);
+                                          controller.updateTotal();
+                                        },
+                                      ),
+                                    ], // <-- End of children for trailing Row
+                                  ), // <-- End of trailing Row
                                 ), // <-- End of ListTile
                               ),
                               const SizedBox(height: 4),
@@ -350,7 +356,10 @@ class ActivityBooking extends StatelessWidget {
                                     children: [
                                       // ⭐ EDIT ICON
                                       IconButton(
-                                        icon: const Icon(Icons.edit, color: Colors.blue),
+                                        icon: const Icon(
+                                          Icons.edit,
+                                          color: Colors.blue,
+                                        ),
                                         onPressed: () {
                                           showEditPaymentDialog(p);
                                         },
@@ -358,7 +367,10 @@ class ActivityBooking extends StatelessWidget {
 
                                       // DELETE ICON
                                       IconButton(
-                                        icon: const Icon(Icons.delete, color: Colors.red),
+                                        icon: const Icon(
+                                          Icons.delete,
+                                          color: Colors.red,
+                                        ),
                                         onPressed: () {
                                           controller.rxListPayment.remove(p);
                                           controller.updateTotal();
@@ -382,7 +394,8 @@ class ActivityBooking extends StatelessWidget {
                             border: OutlineInputBorder(),
                           ),
                         ),
-                    ]),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -418,6 +431,12 @@ class ActivityBooking extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 16),
+
+                        _summaryRow(
+                          "Stay Duration",
+                          "${controller.getStayDays()} Night(s)",
+                        ),
+                        const SizedBox(height: 8),
 
                         _summaryRow(
                           "Room Rate",
@@ -468,9 +487,7 @@ class ActivityBooking extends StatelessWidget {
 
                         const SizedBox(height: 22),
 
-                        // ============================
                         // ACTION BUTTONS
-                        // ============================
                         Wrap(
                           spacing: 12,
                           runSpacing: 12,
@@ -536,29 +553,32 @@ class ActivityBooking extends StatelessWidget {
                             SizedBox(
                               width: 150,
                               child: ElevatedButton.icon(
-                                onPressed: () => controller.cancelBooking(context),
+                                onPressed: () =>
+                                    controller.cancelBooking(context),
                                 icon: const Icon(Icons.cancel),
                                 label: const Text("Cancel"),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.redAccent,
                                 ),
-
-
                               ),
                             ),
                             ElevatedButton.icon(
                               icon: const Icon(Icons.call_split),
                               label: const Text("Split Bill"),
                               onPressed: () async {
-
-                                await controller.updateTotal(); // ensure latest totals
+                                await controller
+                                    .updateTotal(); // ensure latest totals
 
                                 final result = await Get.to(
-                                      () => SplitBillScreen(
-                                    totalAmount: double.tryParse(controller.totalCtrl.text) ??
+                                  () => SplitBillScreen(
+                                    totalAmount:
+                                        double.tryParse(
+                                          controller.totalCtrl.text,
+                                        ) ??
                                         controller.totalBill,
                                     guests: controller.rxListGuest.toList(),
-                                    facilities: controller.rxListAmenities.toList(),
+                                    facilities: controller.rxListAmenities
+                                        .toList(),
                                   ),
                                 );
 
@@ -567,7 +587,6 @@ class ActivityBooking extends StatelessWidget {
                                   await controller.updateTotal();
                                 }
                               },
-
                             ),
                             SizedBox(
                               width: 150,
@@ -586,21 +605,22 @@ class ActivityBooking extends StatelessWidget {
                 ),
               ),
             ),
-      ]  ),
-    ));
+          ],
+        ),
+      ),
+    );
   }
 }
 
-// ============
 // SUMMARY ROW
-// ============
 Widget _summaryRow(
   String label,
   String value, {
   bool isBold = false,
   double fontSize = 14,
   Color? color,
-}) {
+})
+{
   return Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
@@ -619,8 +639,6 @@ Widget _summaryRow(
           color: color,
         ),
       ),
-
     ],
-
   );
 }

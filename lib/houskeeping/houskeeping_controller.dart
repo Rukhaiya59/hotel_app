@@ -11,6 +11,7 @@ import '../../model/entity_cleaning_task.dart';
 import '../../enums/enum_room_status.dart';
 import '../../enums/enum_role.dart';
 import '../../util/snackbar_util.dart';
+import '../enums/enum_cleaning_type.dart';
 
 class HousekeepingController extends GetxController {
   late Box<EntityUser> boxUser;
@@ -110,11 +111,11 @@ class HousekeepingController extends GetxController {
   Future<void> assignTask({
     required EntityUser staff,
     required EntityRoom room,
-    required String type,
+    required CleaningType type,
   }) async {
     final task = EntityCleaningTask(
       status: "pending",
-      type: type,
+      type: type.name, // ✅ ENUM → STRING
     );
 
     task.user.target = staff;
@@ -126,17 +127,19 @@ class HousekeepingController extends GetxController {
     boxRoom.put(room);
 
     SnackbarUtil.showSuccess(
-        "Cleaning assigned to ${staff.first ?? staff.username}");
+      "Cleaning assigned to ${staff.first ?? staff.username}",
+    );
 
     refreshAll();
   }
+
 
   void markDone(EntityCleaningTask task) {
     final room = task.room.target;
     final booking = task.booking.target;
 
     task.status = "done";
-    task.completedAt = DateTime.now();
+    task.completedAt = DateTime.now().toIso8601String();
     boxTask.put(task);
 
     if (task.type == "stayover") {
