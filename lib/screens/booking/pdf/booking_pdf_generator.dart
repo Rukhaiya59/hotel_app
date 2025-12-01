@@ -171,8 +171,8 @@ Future<Uint8List> generateBookingPdf(EntityBooking booking) async {
   final subTotal = booking.totalBill;
   final discount = booking.discountPrice ?? 0;
   final total = subTotal - discount;
-  final tax = total * 0.10;
-  final grandTotal = total + tax;
+  // final tax = total * 0.10;
+  // final grandTotal = total + tax;
 
   pdf.addPage(
     pw.MultiPage(
@@ -243,13 +243,16 @@ Future<Uint8List> generateBookingPdf(EntityBooking booking) async {
               "Guest Address",
               "Contact Information",
             ]),
-            pw.TableRow(
-              children: [
-                _cell("${guests.first.first} ${guests.first.last}"),
-                _cell("India"),
-                _cell(guests.first.phone ?? "-"),
-              ],
+            ...guests.map(
+                  (g) => pw.TableRow(
+                children: [
+                  _cell("${g.first} ${g.last}"),
+                  _cell(g.address ?? "India"),
+                  _cell(g.phone ?? "-"),
+                ],
+              ),
             ),
+
           ],
         ),
 
@@ -302,12 +305,15 @@ Future<Uint8List> generateBookingPdf(EntityBooking booking) async {
           },
           children: [
             _summaryRow("Subtotal", "$symbol${subTotal.toStringAsFixed(2)}"),
-            _summaryRow("Tax (10%)", "$symbol${tax.toStringAsFixed(2)}"),
             _summaryRow(
-              "Total Due",
-              "$symbol${grandTotal.toStringAsFixed(2)}",
-              bold: true,
+              "Discount",
+              "-$symbol${discount.toStringAsFixed(2)}",
             ),
+            // _summaryRow(
+            //   "Total Due",
+            //   // "$symbol${grandTotal.toStringAsFixed(2)}",
+            //   bold: true,
+            // ),
           ],
         ),
 

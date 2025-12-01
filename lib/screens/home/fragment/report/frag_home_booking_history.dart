@@ -9,7 +9,7 @@ class FragHomeBookingHistory extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(ControllerBookingHistory());
+    final controller = Get.put(ControllerBookingHistory1());
     final currencyService = Get.find<ServiceCurrency>();
     final symbol = currencyService.symbol;
 
@@ -179,7 +179,7 @@ class FragHomeBookingHistory extends StatelessWidget {
 
 // ---------------- TOP FILTER BAR ----------------
 class _TopFilterBar extends StatelessWidget {
-  final ControllerBookingHistory controller;
+  final ControllerBookingHistory1 controller;
 
   const _TopFilterBar({required this.controller});
 
@@ -244,7 +244,7 @@ class _TopFilterBar extends StatelessWidget {
 
 // ---------------- SUMMARY ROW ----------------
 class _SummaryRow extends StatelessWidget {
-  final ControllerBookingHistory controller;
+  final ControllerBookingHistory1 controller;
   final String symbol;
 
   const _SummaryRow({required this.controller, required this.symbol});

@@ -5,7 +5,7 @@ import 'package:objectbox/objectbox.dart';
 import '../model/entity_booking.dart';
 import '../service/service_object_box.dart';
 
-class ControllerBookingHistory extends GetxController {
+class ControllerBookingHistory1 extends GetxController {
   late final Box<EntityBooking> boxBooking;
 
   var all = <EntityBooking>[].obs;

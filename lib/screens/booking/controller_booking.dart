@@ -256,7 +256,7 @@ Future<void> saveBooking() async {
           double.tryParse(tecDiscountPrice.text) ?? 0.0;
       booking.discountDesc = tecDiscountDescription.text;
 
-      // ✅ CLEAR OLD & RE-ADD UPDATED DATA
+      //  CLEAR OLD & RE-ADD UPDATED DATA
       booking.guest.clear();
       booking.amenities.clear();
       booking.payment.clear();
@@ -265,7 +265,7 @@ Future<void> saveBooking() async {
       booking.amenities.addAll(rxListAmenities);
       booking.payment.addAll(rxListPayment);
 
-      // ✅ JUST UPDATE — NO NEW BOOKING
+      //  JUST UPDATE — NO NEW BOOKING
       boxBooking.put(booking);
 
       updateTotal();
@@ -275,7 +275,7 @@ Future<void> saveBooking() async {
     }
 
     // -------------------------------
-    // ✅ CASE 2 : NEW BOOKING
+    //  CASE 2 : NEW BOOKING
     // -------------------------------
     final now = DateTime.now();
     final ciNew = DateTime.parse(checkInCtrl.text);
@@ -426,7 +426,7 @@ Future<void> saveBooking() async {
 
     room.value = newRoom;
 
-    // ✅ AUTO UPDATE BILL
+    //  AUTO UPDATE BILL
     updateTotal();
 
     SnackbarUtil.showSuccess("Room changed successfully!");
@@ -434,7 +434,7 @@ Future<void> saveBooking() async {
 
 
   Future<void> updateTotal() async {
-    double roomPrice = roomRate; // ✅ duration included
+    double roomPrice = roomRate; //  duration included
     double amenitiesPrice = 0.0;
 
     // FIX: apply qty properly
@@ -669,7 +669,7 @@ Future<void> saveBooking() async {
 
     final int days = getStayDays();
 
-    return perDayPrice * days;   // ✅ PER DAY × NO. OF DAYS
+    return perDayPrice * days;   //  PER DAY × NO. OF DAYS
   }
 
 
@@ -778,7 +778,7 @@ Future<void> saveBooking() async {
                 payment.paymentMode = selectedMode.value;
                 payment.transactionId = txnCtrl.text;
                 payment.amount = double.tryParse(amtCtrl.text) ?? 0;
-                boxPayment.put(payment);   // ✅ DATABASE UPDATE
+                boxPayment.put(payment);   //  DATABASE UPDATE
                 rxListPayment.refresh();
                 updateTotal();
 
@@ -864,7 +864,7 @@ Future<void> saveBooking() async {
 
     double totalSplitAmount = 0;
 
-    // ✅ Create new split + payment
+    // Create new split + payment
     for (var r in result) {
       final double amt = (r["amount"] as num).toDouble();
       totalSplitAmount += amt;
@@ -880,10 +880,10 @@ Future<void> saveBooking() async {
         createdAt: DateTime.now().toIso8601String(),
       );
 
-      // ✅ SAVE SPLIT IN DB
+      //  SAVE SPLIT IN DB
       boxSplitBill.put(split);
 
-      // ✅ Create payment also
+      //  Create payment also
       rxListPayment.add(
         EntityPayment(
           paymentMode: split.paymentMode!,
@@ -896,7 +896,7 @@ Future<void> saveBooking() async {
       );
     }
 
-    // ✅ Safety adjustment
+    //  Safety adjustment
     final double billTotal = totalBill;
 
     if (totalSplitAmount != billTotal && rxListPayment.isNotEmpty) {

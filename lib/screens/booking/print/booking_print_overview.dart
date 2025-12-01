@@ -248,11 +248,14 @@ class BookingPrintOverview extends StatelessWidget {
                   "Guest Address",
                   "Contact Information",
                 ]),
-                _tableRow([
-                  "${guests.first.first} ${guests.first.last}",
-                  "India",
-                  guests.first.phone ?? "-",
-                ]),
+                ...guests.map(
+                      (g) => _tableRow([
+                    "${g.first} ${g.last}",
+                    g.address ?? "India",
+                    g.phone ?? "-",
+                  ]),
+                ),
+
 
                 const SizedBox(height: 20),
 
@@ -293,6 +296,10 @@ class BookingPrintOverview extends StatelessWidget {
                     children: [
                       _summaryRowUI("Subtotal",
                           "$symbol${subTotal.toStringAsFixed(2)}"),
+                      _summaryRowUI(
+                        "Discount",
+                        "-$symbol${discount.toStringAsFixed(2)}",
+                      ),
                       _summaryRowUI(
                           "Tax (10%)", "$symbol${tax.toStringAsFixed(2)}"),
                       _summaryRowUI(
