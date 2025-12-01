@@ -155,8 +155,8 @@ class BookingPrintOverview extends StatelessWidget {
     final subTotal = booking.totalBill;
     final discount = booking.discountPrice ?? 0;
     final totalAfterDiscount = subTotal - discount;
-    final tax = totalAfterDiscount * 0.10;
-    final grandTotal = totalAfterDiscount + tax;
+    // final tax = totalAfterDiscount * 0.10;
+    // final grandTotal = totalAfterDiscount + tax;
 
     return Scaffold(
       appBar: AppBar(
@@ -300,13 +300,13 @@ class BookingPrintOverview extends StatelessWidget {
                         "Discount",
                         "-$symbol${discount.toStringAsFixed(2)}",
                       ),
-                      _summaryRowUI(
-                          "Tax (10%)", "$symbol${tax.toStringAsFixed(2)}"),
-                      _summaryRowUI(
-                        "Total Due",
-                        "$symbol${grandTotal.toStringAsFixed(2)}",
-                        bold: true,
-                      ),
+                      // _summaryRowUI(
+                      //     "Tax (10%)", "$symbol${tax.toStringAsFixed(2)}"),
+                      // _summaryRowUI(
+                      //   "Total Due",
+                      //   "$symbol${grandTotal.toStringAsFixed(2)}",
+                      //   bold: true,
+                      // ),
                     ],
                   ),
                 ),
